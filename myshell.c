@@ -23,7 +23,6 @@ bool get_command(char * buffer) {
     return true;
 }
 
-
 int main(int argc, char const *argv[]) {
     char buffer[BUFFER_SIZE];
     while (true) {
