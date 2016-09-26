@@ -1,22 +1,9 @@
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
 #include "util.h"
+#include "parser.h"
 
-#define BUFFER_SIZE 1024
-#define MAX_ARGS_NUMBER 30
-#define VALID 0
-typedef struct Command {
-    int argc;
-    char * argv[MAX_ARGS_NUMBER];
-    struct Command *next;
-} Command;
 
-typedef struct Line {
-    int type;
-    int background;
-    Command * head;
-} Line;
 
 
 bool get_command(char * buffer) {
