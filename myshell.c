@@ -2,8 +2,7 @@
 #include <string.h>
 #include "util.h"
 #include "parser.h"
-
-
+#include "execute.h"
 
 
 bool get_command(char * buffer) {
@@ -29,11 +28,11 @@ int main(int argc, char const *argv[]) {
     while (true) {
         fprintf(stdout, "## myshell $ ");
         while (!get_command(buffer));
-            //char * input = strndup(buffer,strlen(buffer) - 1);
-            //Line * line = parse(input);
-            //if (line) {
-             //   execute(line);
-            //}
-            //free(input);
+            char * input = strndup(buffer,strlen(buffer) - 1);
+            Line * line = parse(input);
+            if (line) {
+                execute(line);
+            }
+            free(input);
     }
 }

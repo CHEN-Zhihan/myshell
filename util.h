@@ -2,6 +2,7 @@
 #define UTIL_H
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #ifndef nullptr
 #define nullptr NULL
 #endif
