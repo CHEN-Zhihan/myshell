@@ -3,7 +3,7 @@
 
 #include "util.h"
 
-
+Line * parse(char * input);
 
 
 
