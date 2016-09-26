@@ -1,5 +1,34 @@
 #include "parser.h"
 
+void printCommand(Command * cmd) {
+    printf("%s ",cmd->argv[0]);
+    int i=0;
+    for (i=1;i!=cmd->argc;++i) {
+        printf("%s ",cmd->argv[i]);
+    }
+    printf("\n");
+}
+
+void printLine(Line * cmd) {
+    if (cmd) {
+        if (cmd->type==EXIT_TYPE) {
+            printf("exit ");
+        } else if (cmd->type==VIEWTREE_TYPE) {
+            printf("viewtree ");
+        } else if (cmd->type==TIMEX_TYPE) {
+            printf("timeX ");
+        }
+        Command * iterator = cmd->head;
+        while (iterator) {
+            printCommand(iterator);
+            iterator=iterator->next;
+        }
+    } else {
+        printf("invalid line\n");
+    }
+
+}
+
 int hasCmd(const char * line, const int begin, const int end) {
     int i=begin;
     bool hascmd=false;
@@ -41,7 +70,7 @@ void freeLine(Line * line) {
 int syntaxCheck(char * line) {
     ssize_t size = strlen(line);
     if(split_input(line, nullptr," ",false)==0) {
-        return nullptr;
+        return -1;
     }
     char * background = strchr(line,'&');
 
@@ -111,7 +140,6 @@ Line * process(Line * line, char * message) {
         freeLine(line);
         return nullptr;
     } else {
-        line->type=-1;
         return line;
     }
 }
@@ -120,8 +148,10 @@ Line * process(Line * line, char * message) {
 Line * processBuiltin(Line * line) {
     Command * first = line->head;
     if (strcmp(first->argv[0],"exit\0")==0) {
+        line->type=EXIT_TYPE;
         return process(line,"exit\0");
     } else if (strcmp(first->argv[0],"viewtree\0")==0) {
+        line->type=VIEWTREE_TYPE;
         return process(line,"viewtree\0");
     }
     Command * iterator=line->head;
@@ -141,9 +171,11 @@ Line * processBuiltin(Line * line) {
         for (i=0;i!=iterator->argc;++i) {
             iterator->argv[i]=iterator->argv[i+1];
         }
-        line->type=1;
+        iterator->argv[i]=nullptr;
+        line->type=TIMEX_TYPE;
+    } else {
+        line->type=0;
     }
-    line->type=0;
     return line;
 }
 
@@ -171,24 +203,27 @@ Line * parse(char * line) {
     }
 
     Line * result = (Line*)malloc(sizeof(Line));
+    result->type=0;
     result->background=syntaxResult%2==1;
     char * rawCmd[5];
-    int cmdNumber = split_input(line,rawCmd," ",true);
-    Command iterator = nullptr;
+    int cmdNumber = split_input(line,rawCmd,"|",true);
+    Command *iterator = nullptr;
     while (i<cmdNumber) {
         if (iterator==nullptr) {
             result->head=parseCommand(rawCmd[i]);
             iterator=result;
         } else {
             iterator->next=parseCommand(rawCmd[i]);
-            iterator=iterator.next;
+            iterator=iterator->next;
         }
         ++i;
     }
     for (i=0;i!=cmdNumber;++i) {
         free(rawCmd[i]);
     }
+ //
     result = processBuiltin(result);
+    printLine(result);
     return result;
 }
 
