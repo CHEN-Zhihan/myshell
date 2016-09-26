@@ -53,7 +53,7 @@ int main(int argc, char const *argv[]) {
     struct Command* cmd;
 
     while (1) {
-        while(waitpid(-1, NULL, 0) > 0);
+        while(waitpid(-1, NULL, WNOHANG) > 0);
         int error = get_command(buffer);
         if (error == 1) {
             format_buffer(buffer);

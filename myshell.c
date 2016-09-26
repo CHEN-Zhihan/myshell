@@ -1,45 +1,52 @@
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
+#include "util.h"
 
-#define BUFFER_SIZE 1026
-#define MAX_CMD_NUMBER 5
+#define BUFFER_SIZE 1024
+#define MAX_ARGS_NUMBER 30
 #define VALID 0
 typedef struct Command {
-	int valid;
-	int argc;
-	char * argv[MAX_ARG_NUMBER];
-	Command *next;
+    int argc;
+    char * argv[MAX_ARGS_NUMBER];
+    struct Command *next;
 } Command;
 
-ps
-ls | ps
-
 typedef struct Line {
-	int type;//built-in or not
-	int valid;
-	int background;
-	Command *head;
+    int type;
+    int background;
+    Command * head;
 } Line;
 
 
+bool get_command(char * buffer) {
+    memset(buffer, 0,BUFFER_SIZE * sizeof(char));
+    char * input = fgets(buffer,BUFFER_SIZE,stdin);
+    if(input == nullptr) {
+        return false;
+    }
+    if (input[strlen(input)-1]!='\n') {
+        fprintf(stderr, "myshell: '%s': file name too long\n",input);
+        return false;
+    }
+    if (split_input(input,nullptr," ",false)>MAX_ARGS_NUMBER) {
+        fprintf(stderr,"myshell: Too many arguments\n");
+        return false;
+    }
+    return true;
+}
+
 
 int main(int argc, char const *argv[]) {
-	char buffer[BUFFER_SIZE];
-	while (true) {
-		fprintf(stdout, "## myshell $ ");
-		int error = get_command(buffer);//get the row command.
-		if (error < 0) {
-			report_input_error(error);
-		} else {
-			char * input = strndup(buffer,strlen(buffer) - 1);
-			Line * line = parse(input);
-			if (line.valid==VALID) {
-				execute(line);
-			} else {
-				report_parse_error(line.valid);
-			}
-			free(input);
-		}
-	}
-	return 0;
+    char buffer[BUFFER_SIZE];
+    while (true) {
+        fprintf(stdout, "## myshell $ ");
+        while (!get_command(buffer));
+            char * input = strndup(buffer,strlen(buffer) - 1);
+            Line * line = parse(input);
+            if (line) {
+                execute(line);
+            }
+            free(input);
+    }
 }
