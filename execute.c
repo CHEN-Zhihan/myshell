@@ -1,13 +1,7 @@
 #include "execute.h"
-#include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
-
-
-#include <unistd.h>
 #include <wait.h>
-#include <errno.h>
 
 void run_command(Command *cmd, int is_background) {
 
@@ -153,9 +147,5 @@ void built_in(int type) {
         exit(EXIT_SUCCESS);
 	} else if (type == -2) {
 		return;
-		
-
 	}
-
-
 }
