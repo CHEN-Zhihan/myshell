@@ -1,17 +1,9 @@
 #include "execute.h"
-<<<<<<< HEAD
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
 
-
-=======
-#include <unistd.h>
-#include <wait.h>
-#include <errno.h>
-
->>>>>>> 9faff0c90bd922bf16be693ee16148e1fb1946f0
 void run_command(Command *cmd, int is_background) {
 
     if (is_background) {
@@ -22,9 +14,6 @@ void run_command(Command *cmd, int is_background) {
     exit(EXIT_FAILURE);
 }
 
-void print_timeX(int pid) {
-    printf("as if I am TIMEX\n");
-}
 
 void print_tree() {
     printf("as if I am a tree\n");
@@ -55,14 +44,6 @@ int safe_fork() {
 	return pid;
 }
 
-void built_in(int type) {
-    if (type==EXIT_TYPE) {
-        printf("myshell: Terminated\n");
-        exit(0);
-    } else if (type==VIEWTREE_TYPE) {
-        print_tree();
-    }
-}
 
 void execute(struct Line *line) {
 
