@@ -2,6 +2,7 @@
 #define UTIL_H
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #ifndef nullptr
 #define nullptr NULL
 #endif
@@ -23,9 +24,12 @@
 #define pipe_out(pipefd) close(pipefd[0]);dup2(pipefd[1],STDOUT_FILENO);close(pipefd[1]);
 #define pipe_in(pipefd) close(pipefd[1]);dup2(pipefd[0], STDIN_FILENO);close(pipefd[0]);
 #define close_pipe(pipefd) close(pipefd[0]);close(pipefd[1]);
+#define EXIT_TYPE -1
+#define VIEWTREE_TYPE -2
+#define TIMEX_TYPE 1
+#define NORMAL_TYPE 0
 
 #define MAX_PIPE_NUMBER 5
-#define MAX_ARG_NUMBER 100
 
 typedef struct Command {
     int argc;
