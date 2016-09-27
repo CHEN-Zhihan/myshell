@@ -1,9 +1,7 @@
 #include "execute.h"
-#include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
-
+#include <wait.h>
 
 void run_command(Command *cmd, int is_background) {
 
