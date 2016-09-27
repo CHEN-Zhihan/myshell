@@ -1,3 +1,10 @@
+#include "execute.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+
+
 void run_command(Command *cmd, int is_background) {
 
     if (is_background) {
@@ -97,4 +104,52 @@ void execute(struct Line *line, int flag, int is_background) {
 	        }
 		}
 	}
+}
+
+
+void print_timeX(int pid) {
+    int pid_get;
+    char cmd[MAX_PROC_FILE_PATH];
+    unsigned long ut, st;
+
+
+    char str[MAX_PROC_FILE_PATH];
+    sprintf(str, "/proc/%d/stat", pid);
+    FILE *file = fopen(str, "r");
+    if (file == NULL) {
+        printf("Error in open my proc file\n");
+        exit(0);
+    }
+
+    int z;
+    unsigned long h;
+    char stat;
+
+    fscanf(file, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu", &pid_get, cmd, &stat, &z, &z, &z, &z, &z,
+           (unsigned *)&z, &h, &h, &h, &h, &ut, &st);
+    fclose(file);
+
+    cmd[strlen(cmd) - 1] = 0;
+
+
+    double utime = ut*1.0f/sysconf(_SC_CLK_TCK);
+    double stime = st*1.0f/sysconf(_SC_CLK_TCK);
+
+    printf("\n");
+    printf("%-10s%-15s%-10s%-10s%-10s\n", "PID", "CMD", "RTIME", "UTIME", "STIME");
+    printf("%-10d%-15s%-4.2lf%-6s%-4.2lf%-6s%-4.2lf%-6s\n", pid_get, cmd+1, utime + stime, " s", utime," s", stime," s");
+}
+
+
+void built_in(int type) {
+	if (type == -1) {
+		fprintf(stderr, "myshell: Terminated\n");
+        exit(EXIT_SUCCESS);
+	} else if (type == -2) {
+		return;
+		
+
+	}
+
+
 }
