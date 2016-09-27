@@ -210,7 +210,7 @@ Line * parse(char * line) {
     while (i<cmdNumber) {
         if (iterator==nullptr) {
             result->head=parseCommand(rawCmd[i]);
-            iterator=result->head->next;
+            iterator=result->head;
         } else {
             iterator->next=parseCommand(rawCmd[i]);
             iterator=iterator->next;
