@@ -54,7 +54,6 @@ void freeCommand(Command * cmd) {
 }
 
 void freeLine(Line * line) {
-    int i=0;
     Command * iterator = line->head;
     while (iterator) {
         Command * temp = iterator;
@@ -211,7 +210,7 @@ Line * parse(char * line) {
     while (i<cmdNumber) {
         if (iterator==nullptr) {
             result->head=parseCommand(rawCmd[i]);
-            iterator=result;
+            iterator=result->head->next;
         } else {
             iterator->next=parseCommand(rawCmd[i]);
             iterator=iterator->next;
