@@ -5,7 +5,8 @@ using std::cout;
 
 
 int main() {
+sleep(3);   
+ while (true) {
     cout << 1;
-    sleep(5);
-    return 0;
+    }
 }
