@@ -12,10 +12,6 @@ bool get_command(char * buffer) {
         if(getchar() == EOF) exit(1);
         return false;
     }
-    if (input[strlen(input)-1]!='\n') {
-        fprintf(stderr, "myshell: '%s': file name too long\n",input);
-        return false;
-    }
     if (split_input(input,nullptr," ",false)>MAX_ARGS_NUMBER) {
         fprintf(stderr,"myshell: Too many arguments\n");
         return false;

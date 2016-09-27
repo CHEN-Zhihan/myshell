@@ -1,34 +1,6 @@
 #include "parser.h"
-
-void printCommand(Command * cmd) {
-    printf("%s ",cmd->argv[0]);
-    int i=0;
-    for (i=1;i!=cmd->argc;++i) {
-        printf("%s ",cmd->argv[i]);
-    }
-    printf("\n");
-}
-
-void printLine(Line * cmd) {
-    if (cmd) {
-        if (cmd->type==EXIT_TYPE) {
-            printf("exit ");
-        } else if (cmd->type==VIEWTREE_TYPE) {
-            printf("viewtree ");
-        } else if (cmd->type==TIMEX_TYPE) {
-            printf("timeX ");
-        }
-        Command * iterator = cmd->head;
-        while (iterator) {
-            printCommand(iterator);
-            iterator=iterator->next;
-        }
-    } else {
-        printf("invalid line\n");
-    }
-
-}
-
+#define BACKGROUND_MODE 1
+#define FRONTGROUND_MODE 0
 int hasCmd(const char * line, const int begin, const int end) {
     int i=begin;
     bool hascmd=false;
@@ -54,7 +26,6 @@ void freeCommand(Command * cmd) {
 }
 
 void freeLine(Line * line) {
-    int i=0;
     Command * iterator = line->head;
     while (iterator) {
         Command * temp = iterator;
@@ -63,9 +34,6 @@ void freeLine(Line * line) {
     }
     free(line);
 }
-
-
-
 
 int syntaxCheck(char * line) {
     ssize_t size = strlen(line);
@@ -120,17 +88,9 @@ int syntaxCheck(char * line) {
         }
     }
     if (background!=nullptr) {
-        if (pipe!=nullptr) {
-            return 3; // background with pipe
-        } else {
-            return 1; // background without pipe;
-        }
+        return BACKGROUND_MODE;
     } else {
-        if (pipe!=nullptr) {
-            return 2; // Non background with pipe;
-        } else {
-            return 0; // Non background without pipe;
-        }
+        return FRONTGROUND_MODE;
     }
 }
 
@@ -174,7 +134,7 @@ Line * processBuiltin(Line * line) {
         iterator->argv[i]=nullptr;
         line->type=TIMEX_TYPE;
     } else {
-        line->type=0;
+        line->type=NORMAL_TYPE;
     }
     return line;
 }
@@ -196,34 +156,29 @@ Command * parseCommand(char * input) {
 
 Line * parse(char * line) {
     int i=0;
-    size_t size = strlen(line);
     int syntaxResult = syntaxCheck(line);
     if (syntaxResult==-1) {
         return nullptr;
     }
-
     Line * result = (Line*)malloc(sizeof(Line));
     result->type=0;
-    result->background=syntaxResult%2==1;
+    result->background=syntaxResult;
     char * rawCmd[5];
     int cmdNumber = split_input(line,rawCmd,"|",true);
     Command *iterator = nullptr;
     while (i<cmdNumber) {
         if (iterator==nullptr) {
             result->head=parseCommand(rawCmd[i]);
-            iterator=result;
+            free(rawCmd[i]);
+            iterator=result->head;
         } else {
             iterator->next=parseCommand(rawCmd[i]);
+            free(rawCmd[i]);
             iterator=iterator->next;
         }
         ++i;
     }
-    for (i=0;i!=cmdNumber;++i) {
-        free(rawCmd[i]);
-    }
- //
     result = processBuiltin(result);
-    printLine(result);
     return result;
 }
 

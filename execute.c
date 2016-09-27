@@ -1,8 +1,14 @@
 #include "execute.h"
+<<<<<<< HEAD
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+=======
+#include <unistd.h>
+#include <errno.h>
+#include <wait.h>
+>>>>>>> 04655dd40ccce1b535cda74439eda90cafe98301
 
 void run_command(Command *cmd, int is_background) {
 
@@ -14,11 +20,14 @@ void run_command(Command *cmd, int is_background) {
     exit(EXIT_FAILURE);
 }
 
+<<<<<<< HEAD
 
 void print_tree() {
     printf("as if I am a tree\n");
 }
 
+=======
+>>>>>>> 04655dd40ccce1b535cda74439eda90cafe98301
 void wait_wrapped(int pid, int is_background, int flag) {
 	if (!is_background) {
         if (flag) {
@@ -153,9 +162,5 @@ void built_in(int type) {
         exit(EXIT_SUCCESS);
 	} else if (type == -2) {
 		return;
-		
-
 	}
-
-
 }
