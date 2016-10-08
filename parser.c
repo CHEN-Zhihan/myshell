@@ -64,7 +64,7 @@ int syntaxCheck(char * line) {
         int after = (int)(background-line)+1;
         while (after<size) {
             if (line[after]!=' ') {
-                printf("myshell: syntax error near unexpected token '&'\n");
+                printf("myshell: '&' should not appear in the middle of the command line\n");
                 return -1;
             }
             ++after;
