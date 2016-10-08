@@ -32,8 +32,6 @@ int safe_fork() {
 	if (pid == -1) {
 		fprintf(stderr, "can not fork\n");
         return -1;
-	}else if (pid == 0) {
-		signal(SIGCHLD, SIG_IGN);
 	}
 	return pid;
 }
