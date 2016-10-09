@@ -6,12 +6,16 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <unistd.h>
-void SIGCHLD_handler(int signal) {
+#include <errno.h>
+void SIGCHLD_handler() {
     int pid = waitpid(-1, NULL, 0);
-    printf("%d, %d\n", pid, getpgid(pid));
-    if (pid == getpgid(pid)) {
+    if (pid > 0) {
         printf("[%d] %s Done",pid,"wtf\0");
     }
+}
+
+void SIGINT_handler() {
+    printf("\n");
 }
 
 void SIGCHLD_handler_wrapper() {
@@ -23,10 +27,11 @@ void SIGCHLD_handler_wrapper() {
 }
 
 
+
 void SIGINT_handler_wrapper() {
     struct sigaction act;
     memset(&act, 0, sizeof(sigaction));
-    act.sa_handler = SIG_IGN;
+    act.sa_handler = SIGINT_handler;
     act.sa_flags = 0;
     sigaction(SIGINT, &act, NULL);
 }
@@ -40,7 +45,6 @@ bool get_command(char * buffer) {
     memset(buffer, 0,BUFFER_SIZE * sizeof(char));
     char * input = fgets(buffer,BUFFER_SIZE,stdin);
     if (input == nullptr) {
-        fprintf(stdout, "\n");
         return false;
     }
     if (split_input(input,nullptr," ",false)>MAX_ARGS_NUMBER) {
