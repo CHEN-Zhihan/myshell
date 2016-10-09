@@ -76,13 +76,13 @@ int syntaxCheck(char * line) {
     if (pipe!=nullptr) {
         int itr = hasCmd(line,0,(int)(pipe-line));
         if (itr==-1||line[size-1]=='|') {
-            printf("myshell: syntax error near unexpeced token '|'\n");
+            printf("myshell: Incomplete '|' sequence\n");
             return -1;
         }
         while (itr!=size)  {
             itr = hasCmd(line,itr+1,(int)size);
             if (itr==-1) {
-                printf("myshell: syntax error near unexpeced token '|'\n");
+                printf("myshell: Incomplete '|' sequence\n");
                 return -1;
             }
         }
@@ -142,13 +142,15 @@ Line * processBuiltin(Line * line) {
 Command * parseCommand(char * input) {
     Command * result = (Command *)malloc(sizeof(Command));
     result->argc=split_input(input,result->argv," ",true);
-    if (strcmp(result->argv[result->argc-1],"&")==0) {
+    if (strcmp(result->argv[result->argc-1],"&\0")==0) {
         free(result->argv[--result->argc]);
-    }
-    char * last = result->argv[result->argc-1];
-    size_t size = strlen(last);
-    if (last[size-1]=='&') {
-        last[size-1]='\0';
+        result->argv[result->argc]=nullptr;
+    } else {
+        char * last = result->argv[result->argc-1];
+        size_t size = strlen(last);
+        if (last[size-1]=='&') {
+            last[size-1]='\0';
+        }
     }
     result->next=nullptr;
     return result;
