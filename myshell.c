@@ -7,14 +7,14 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <errno.h>
-void SIGCHLD_handler() {
-    int pid = waitpid(-1, NULL, 0);
+void SIGCHLD_handler(int signum) {
+    int pid = waitpid(-1, NULL, WNOHANG);
     if (pid > 0) {
         printf("[%d] %s Done",pid,"wtf\0");
     }
 }
 
-void SIGINT_handler() {
+void SIGINT_handler(int signum) {
     printf("\n");
 }
 
@@ -66,8 +66,6 @@ void printCmd(Command * cmd) {
 void printLine(Line * line) {
     if (line->type==TIMEX_TYPE) {
         printf("timeXing\n");
-    } else if (line->type == VIEWTREE_TYPE) {
-        printf("view tree\n");
     }
     Command * iterator= line->head;
     while (iterator!=nullptr) {
