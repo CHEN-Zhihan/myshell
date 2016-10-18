@@ -243,7 +243,7 @@ PIDNode * buildTree(PIDNode **list, PIDNode* root) {
     return root;
 }
 
-void printTree(PIDNode * root, int i) {
+void printTree(PIDNode * root) {
     printf("%s",root->name);
     PIDNode * iterator=root->child;
     if (iterator!=nullptr) {
@@ -251,11 +251,18 @@ void printTree(PIDNode * root, int i) {
     } else {
         printf("\n");
     }
-    while (iterator!=nullptr) {
-        printTree(iterator,i+strlen(root->name));
+    if (iterator!=nullptr) {
+        printTree(iterator);
         iterator=iterator->next;
     }
-
+    while (iterator!=nullptr) {
+        ssize_t j=0;
+        for(j=0;j!=strlen(root->name)+1;++j) {
+            printf(" ");
+        }
+        printTree(iterator);
+        iterator=iterator->next;
+    }
 }
 
 PIDNode * freeTree(PIDNode * root) {
@@ -271,7 +278,7 @@ void viewTree() {
     PIDNode * list = getPIDList();
     PIDNode * root=buildPIDNode(getpid());
     root = buildTree(&list,root);
-    printTree(root,0);
+    printTree(root);
     list=freeList(list);
     root=freeTree(root);
     return;
