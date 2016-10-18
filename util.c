@@ -32,7 +32,7 @@ int split_input(char *inp, char **output, char *delimiter, bool flag) {
 // /home/zhchen/HKU/COMP3230/assignments/myshell/test/nested 5 &
 PIDNode * buildPIDNode(pid_t inp) {
     pid_t pid=0;
-    char* name=malloc(sizeof(char)*MAX_PROC_FILE_PATH);
+    char * name=(char*)malloc(sizeof(char)*MAX_PROC_FILE_PATH);
     unsigned long ut, st;
     pid_t ppid;
 
@@ -54,6 +54,7 @@ PIDNode * buildPIDNode(pid_t inp) {
     result->PPID=ppid;
     result->PID=pid;
     result->name=name;
+    result->child=nullptr;
     result->next=nullptr;
     return result;
 }

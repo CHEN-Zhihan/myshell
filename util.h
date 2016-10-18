@@ -48,6 +48,7 @@ typedef struct PIDNode {
     pid_t PPID;
     char * name;
     struct PIDNode *next;
+    struct PIDNode *child;
 } PIDNode;
 
 

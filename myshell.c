@@ -9,8 +9,8 @@
 #include <errno.h>
 void SIGCHLD_handler(int signum, siginfo_t * info, void *context) {
     int pid = info->si_pid;
-    PIDNode *pnode = buildPIDNode(pid);
     if (pid == getpgid(pid)) {
+        PIDNode *pnode = buildPIDNode(pid);
         printf("[%d] %s Done",pid, pnode->name);
     }
     waitpid(pid, NULL, WNOHANG);

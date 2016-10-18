@@ -93,7 +93,7 @@ char * copy(char * buffer,ssize_t i, ssize_t j) {
     return result;
 }
 
-PIDNode * buildFromBuffer(char * buffer, PIDNode** iterator,ssize_t size) {
+PIDNode * buildFromBuffer(char * buffer, PIDNode** iterator,ssize_t size,pid_t lsPID) {
     PIDNode * head=nullptr;
     if (size==BUFFER_SIZE&&buffer[size]!='\n') {
         while(buffer[size]!='\n') {
@@ -115,13 +115,15 @@ PIDNode * buildFromBuffer(char * buffer, PIDNode** iterator,ssize_t size) {
         }
         char * pid=copy(buffer,i,j);
         i=j;
-        if ((*iterator)==nullptr) {
-            (*iterator)=buildPIDNode(atoi(pid));
-            head=*iterator;
-        } else {
-            (*iterator)->next=buildPIDNode(atoi(pid));
-            if ((*iterator)->next!=nullptr) {
-                (*iterator)=(*iterator)->next;
+        if (lsPID!=atoi(pid)) {
+            if ((*iterator)==nullptr) {
+                (*iterator)=buildPIDNode(atoi(pid));
+                head=*iterator;
+            } else {
+                (*iterator)->next=buildPIDNode(atoi(pid));
+                if ((*iterator)->next!=nullptr) {
+                    (*iterator)=(*iterator)->next;
+                }
             }
         }
         free(pid);
@@ -130,10 +132,11 @@ PIDNode * buildFromBuffer(char * buffer, PIDNode** iterator,ssize_t size) {
     return head;
 }
 
-PIDNode * getPIDList(pid_t *lsPID) {
+PIDNode * getPIDList() {
     int pfd[2];
     pipe(pfd);
-    if ((*lsPID=safe_fork())==0) {
+    pid_t lsPID=0;
+    if ((lsPID=safe_fork())==0) {
         close(pfd[0]);
         dup2(pfd[1],1);
         char *command[3]={(char*)"ls",(char*)"/proc",nullptr};
@@ -147,7 +150,7 @@ PIDNode * getPIDList(pid_t *lsPID) {
         ssize_t readSize=0;
         PIDNode * pidList=nullptr;
         PIDNode * iterator=nullptr;
-        waitpid(*lsPID,nullptr,0);
+        waitpid(lsPID,nullptr,0);
         do {
             memset(buffer,0,BUFFER_SIZE*sizeof(char));
             readSize=read(pfd[0],buffer,BUFFER_SIZE);
@@ -155,7 +158,7 @@ PIDNode * getPIDList(pid_t *lsPID) {
                 if (lastOne!=nullptr) {
                     combined=buffer[0]=='\n'?lastOne:combine(buffer,lastOne);
                     lastOne=nullptr;
-                    if (isPID(combined)) {
+                    if (isPID(combined)&&atoi(combined)!=lsPID) {
                         iterator->next=buildPIDNode(atoi(combined));
                         if (iterator->next!=nullptr) {
                             iterator=iterator->next;
@@ -165,9 +168,9 @@ PIDNode * getPIDList(pid_t *lsPID) {
                     combined=nullptr;
                 }
                 if (pidList==nullptr) {
-                    pidList=buildFromBuffer(buffer,&iterator,readSize);
+                    pidList=buildFromBuffer(buffer,&iterator,readSize,lsPID);
                 } else {
-                    buildFromBuffer(buffer,&iterator,readSize);
+                    buildFromBuffer(buffer,&iterator,readSize,lsPID);
                 }
                 if (readSize==BUFFER_SIZE &&buffer[readSize-1]!='\n') {
                     lastOne=getLastOne(buffer);
@@ -222,37 +225,55 @@ PIDNode * freeList(PIDNode * list) {
     while (iterator!=nullptr) {
         temp=iterator;
         iterator=iterator->next;
+        free(temp->name);
         free(temp);
     }
     return nullptr;
 }
 
-typedef struct PIDTreeNode {
-    PIDNode * node;
-    PIDNode * child;
-} PIDTreeNode;
-
-PIDTreeNode * buildTree(PIDNode **list, pid_t PPID) {
-    PIDTreeNode gg;
-    return nullptr;
-}
 
 
-void viewTree() {
-    pid_t lsPID=0;
-    PIDNode * list = getPIDList(&lsPID);
-//    PIDNode * iterator=list;
-//    PIDTreeNode root = buildTree(list,getpid());
-//    printTree(root);
-//    freeList(list);
-    PIDNode * gg = extract(&list,getpid());
-    PIDNode *iterator=gg;
+PIDNode * buildTree(PIDNode **list, PIDNode* root) {
+    root->child=extract(list,root->PID);
+    PIDNode * iterator=root->child;
     while (iterator!=nullptr) {
-        printf("%s\n",iterator->name);
+        iterator=buildTree(list,iterator);
         iterator=iterator->next;
     }
-    freeList(list);
-    freeList(gg);
+    return root;
+}
+
+void printTree(PIDNode * root, int i) {
+    printf("%s",root->name);
+    PIDNode * iterator=root->child;
+    if (iterator!=nullptr) {
+        printf("-");
+    } else {
+        printf("\n");
+    }
+    while (iterator!=nullptr) {
+        printTree(iterator,i+strlen(root->name));
+        iterator=iterator->next;
+    }
+
+}
+
+PIDNode * freeTree(PIDNode * root) {
+    if (root!=nullptr) {
+        freeTree(root->next);
+        freeTree(root->child);
+        free(root->name);
+        free(root);
+    }
+}
+
+void viewTree() {
+    PIDNode * list = getPIDList();
+    PIDNode * root=buildPIDNode(getpid());
+    root = buildTree(&list,root);
+    printTree(root,0);
+    list=freeList(list);
+    root=freeTree(root);
     return;
 }
 
