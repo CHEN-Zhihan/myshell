@@ -7,11 +7,13 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <errno.h>
-void SIGCHLD_handler(int signum) {
-    int pid = waitpid(-1, NULL, WNOHANG);
-    if (pid > 0) {
-        printf("[%d] %s Done",pid,"wtf\0");
+void SIGCHLD_handler(int signum, siginfo_t * info, void *context) {
+    int pid = info->si_pid;
+    PIDNode *pnode = buildPIDNode(pid);
+    if (pid == getpgid(pid)) {
+        printf("[%d] %s Done",pid, pnode->name);
     }
+    waitpid(pid, NULL, WNOHANG);
 }
 
 void SIGINT_handler(int signum) {
@@ -20,9 +22,11 @@ void SIGINT_handler(int signum) {
 
 void SIGCHLD_handler_wrapper() {
     struct sigaction act;
-    memset(&act, 0, sizeof(sigaction));
+    sigaction(SIGCHLD, NULL, &act);
     act.sa_handler = SIGCHLD_handler;
-    act.sa_flags = SA_NOCLDSTOP;
+    act.sa_flags |= SA_NOCLDSTOP;
+    act.sa_flags |= SA_SIGINFO;
+    act.sa_flags |= SA_RESTART;
     sigaction(SIGCHLD, &act, NULL);
 }
 
@@ -30,9 +34,9 @@ void SIGCHLD_handler_wrapper() {
 
 void SIGINT_handler_wrapper() {
     struct sigaction act;
-    memset(&act, 0, sizeof(sigaction));
+    sigaction(SIGCHLD, NULL, &act);
     act.sa_handler = SIGINT_handler;
-    act.sa_flags = 0;
+    act.sa_flags &=~SA_RESTART;
     sigaction(SIGINT, &act, NULL);
 }
 
@@ -45,6 +49,7 @@ bool get_command(char * buffer) {
     memset(buffer, 0,BUFFER_SIZE * sizeof(char));
     char * input = fgets(buffer,BUFFER_SIZE,stdin);
     if (input == nullptr) {
+
         return false;
     }
     if (split_input(input,nullptr," ",false)>MAX_ARGS_NUMBER) {
@@ -81,7 +86,7 @@ void printLine(Line * line) {
 }
 
 int main(int argc, char const *argv[]) {
-    
+
     SIGINT_handler_wrapper();
     SIGCHLD_handler_wrapper();
 

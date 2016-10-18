@@ -28,7 +28,7 @@
 #define VIEWTREE_TYPE -2
 #define TIMEX_TYPE 1
 #define NORMAL_TYPE 0
-
+#define MAX_PROC_FILE_PATH 256
 #define MAX_PIPE_NUMBER 5
 
 typedef struct Command {
@@ -43,8 +43,17 @@ typedef struct Line {
     Command * head;
 } Line;
 
+typedef struct PIDNode {
+    pid_t PID;
+    pid_t PPID;
+    char * name;
+    struct PIDNode *next;
+} PIDNode;
+
+
+
 bool allSpace(char *input);
 
 int split_input(char *input, char **output, char *delimiter, bool flag);
-
+PIDNode * buildPIDNode(pid_t inp);
 #endif

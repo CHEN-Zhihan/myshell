@@ -3,8 +3,8 @@
 #include <errno.h>
 #include <wait.h>
 //#define BUFFER_SIZE 3
-void run_command(Command *cmd, int is_background) {
 
+void run_command(Command *cmd, int is_background) {
     if (is_background) {
         setpgid(0, 0);
     }
@@ -15,6 +15,7 @@ void run_command(Command *cmd, int is_background) {
 
 void wait_wrapped(int pid, int is_background, int flag) {
 	if (!is_background) {
+
         if (flag) {
         	waitid(P_PID, pid, NULL, WNOWAIT | WEXITED);
         	print_timeX(pid);
@@ -63,12 +64,7 @@ char* combine(char * buffer,char *lastOne) {
     return result;
 }
 
-typedef struct PIDNode {
-    pid_t PID;
-    pid_t PPID;
-    char * name;
-    struct PIDNode *next;
-} PIDNode;
+
 
 bool isDigit(char c) {
     return c>='0'&&c<='9';
@@ -86,35 +82,6 @@ bool isPID(char *str) {
 }
 
 
-PIDNode * buildPIDNode(char *inp) {
-    pid_t pid;
-    char* name=malloc(sizeof(char)*MAX_PROC_FILE_PATH);
-    unsigned long ut, st;
-    pid_t ppid;
-
-    char str[MAX_PROC_FILE_PATH];
-    sprintf(str, "/proc/%d/stat",atoi(inp));
-    FILE *file = fopen(str, "r");
-    if (file == NULL) {
-        printf("Error in open my proc file\n");
-        exit(0);
-    }
-    int z;
-    unsigned long h;
-    char stat;
-    fscanf(file, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu", &pid, name, &stat, &ppid, &z, &z, &z, &z,
-           (unsigned *)&z, &h, &h, &h, &h, &ut, &st);
-    fclose(file);
-
-    PIDNode * result = (PIDNode*)(malloc(sizeof(PIDNode)));
-    result->PPID=ppid;
-    result->PID=pid;
-    result->name=name;
-    result->next=nullptr;
-    return result;
-}
-
-
 char * copy(char * buffer,ssize_t i, ssize_t j) {
     char * result=(char*)malloc(sizeof(char)*(j-i+1));
     ssize_t c=0;
@@ -126,7 +93,7 @@ char * copy(char * buffer,ssize_t i, ssize_t j) {
     return result;
 }
 
-PIDNode * buildFromBuffer(char * buffer, PIDNode** iterator,ssize_t size,pid_t childPid) {
+PIDNode * buildFromBuffer(char * buffer, PIDNode** iterator,ssize_t size) {
     PIDNode * head=nullptr;
     if (size==BUFFER_SIZE&&buffer[size]!='\n') {
         while(buffer[size]!='\n') {
@@ -148,12 +115,12 @@ PIDNode * buildFromBuffer(char * buffer, PIDNode** iterator,ssize_t size,pid_t c
         }
         char * pid=copy(buffer,i,j);
         i=j;
-        if (atoi(pid)!=childPid) {
-            if ((*iterator)==nullptr) {
-                (*iterator)=buildPIDNode(pid);
-                head=*iterator;
-            } else {
-                (*iterator)->next=buildPIDNode(pid);
+        if ((*iterator)==nullptr) {
+            (*iterator)=buildPIDNode(atoi(pid));
+            head=*iterator;
+        } else {
+            (*iterator)->next=buildPIDNode(atoi(pid));
+            if ((*iterator)->next!=nullptr) {
                 (*iterator)=(*iterator)->next;
             }
         }
@@ -163,11 +130,10 @@ PIDNode * buildFromBuffer(char * buffer, PIDNode** iterator,ssize_t size,pid_t c
     return head;
 }
 
-PIDNode * getPIDList() {
+PIDNode * getPIDList(pid_t *lsPID) {
     int pfd[2];
     pipe(pfd);
-    pid_t childPid=0;
-    if ((childPid=safe_fork())==0) {
+    if ((*lsPID=safe_fork())==0) {
         close(pfd[0]);
         dup2(pfd[1],1);
         char *command[3]={(char*)"ls",(char*)"/proc",nullptr};
@@ -175,14 +141,13 @@ PIDNode * getPIDList() {
         return nullptr;
     } else {
         close(pfd[1]);
-
         char *lastOne=nullptr;
         char buffer[BUFFER_SIZE];
         char * combined=nullptr;
         ssize_t readSize=0;
         PIDNode * pidList=nullptr;
         PIDNode * iterator=nullptr;
-        waitpid(childPid,nullptr,0);
+        waitpid(*lsPID,nullptr,0);
         do {
             memset(buffer,0,BUFFER_SIZE*sizeof(char));
             readSize=read(pfd[0],buffer,BUFFER_SIZE);
@@ -190,17 +155,19 @@ PIDNode * getPIDList() {
                 if (lastOne!=nullptr) {
                     combined=buffer[0]=='\n'?lastOne:combine(buffer,lastOne);
                     lastOne=nullptr;
-                    if (isPID(combined)&&atoi(combined)!=childPid) {
-                        iterator->next=buildPIDNode(combined);
-                        iterator=iterator->next;
+                    if (isPID(combined)) {
+                        iterator->next=buildPIDNode(atoi(combined));
+                        if (iterator->next!=nullptr) {
+                            iterator=iterator->next;
+                        }
                     }
                     free(combined);
                     combined=nullptr;
                 }
                 if (pidList==nullptr) {
-                    pidList=buildFromBuffer(buffer,&iterator,readSize,childPid);
+                    pidList=buildFromBuffer(buffer,&iterator,readSize);
                 } else {
-                    buildFromBuffer(buffer,&iterator,readSize,childPid);
+                    buildFromBuffer(buffer,&iterator,readSize);
                 }
                 if (readSize==BUFFER_SIZE &&buffer[readSize-1]!='\n') {
                     lastOne=getLastOne(buffer);
@@ -260,13 +227,20 @@ PIDNode * freeList(PIDNode * list) {
     return nullptr;
 }
 
-struct PIDTreeNode {
+typedef struct PIDTreeNode {
     PIDNode * node;
     PIDNode * child;
 } PIDTreeNode;
 
+PIDTreeNode * buildTree(PIDNode **list, pid_t PPID) {
+    PIDTreeNode gg;
+    return nullptr;
+}
+
+
 void viewTree() {
-    PIDNode * list = getPIDList();
+    pid_t lsPID=0;
+    PIDNode * list = getPIDList(&lsPID);
 //    PIDNode * iterator=list;
 //    PIDTreeNode root = buildTree(list,getpid());
 //    printTree(root);
@@ -301,12 +275,16 @@ void execute(struct Line *line) {
 	} else if (line->type==VIEWTREE_TYPE) {
         viewTree();
     } else {
+        struct sigaction act;
+        sigaction(SIGINT,nullptr,&act);
 		if (line->head->next == NULL) {
             int pid = safe_fork();
         	if (pid == 0) {
         		run_command(line->head, line->background);
         	}else if (pid > 0) {
+                signal(SIGINT,SIG_IGN);
         		wait_wrapped(pid, line->background, line->type);
+                sigaction(SIGINT,&act,nullptr);
         	}
 		} else {
 
@@ -324,7 +302,9 @@ void execute(struct Line *line) {
 	        if (pid == 0) {
 	        	pipe_out(pipefd[pipe_number]);
 	            run_command(iterator, line->background);
-	        }
+	        } else {
+                signal(SIGINT,SIG_IGN);
+            }
 
 	        while(iterator->next->next != NULL) {
 	            
@@ -354,7 +334,7 @@ void execute(struct Line *line) {
 	        }
 
 	        wait_wrapped(pid, line->background, line->type);
-
+            sigaction(SIGINT,&act,nullptr);
 	        for (size_t i = 0; i < pipe_number + 1; i++) {
 	            wait_wrapped(pid, line->background, line->type);
 	        }
@@ -370,7 +350,6 @@ void print_timeX(int pid) {
     char cmd[MAX_PROC_FILE_PATH];
     unsigned long ut, st;
 
-
     char str[MAX_PROC_FILE_PATH];
     sprintf(str, "/proc/%d/stat", pid);
     FILE *file = fopen(str, "r");
@@ -382,9 +361,11 @@ void print_timeX(int pid) {
     int z;
     unsigned long h;
     char stat;
+    double time_from_boot;
+    int efb;
 
-    fscanf(file, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu", &pid_get, cmd, &stat, &z, &z, &z, &z, &z,
-           (unsigned *)&z, &h, &h, &h, &h, &ut, &st);
+    fscanf(file, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %d %d %d %d %d %d %d", &pid_get, cmd, &stat, &z, &z, &z, &z, &z,
+           (unsigned *)&z, &h, &h, &h, &h, &ut, &st, &z, &z, &z, &z, &z, &z, &efb);
     fclose(file);
 
     cmd[strlen(cmd) - 1] = 0;
@@ -392,8 +373,19 @@ void print_timeX(int pid) {
 
     double utime = ut*1.0f/sysconf(_SC_CLK_TCK);
     double stime = st*1.0f/sysconf(_SC_CLK_TCK);
+    double exec_from_boot = efb*1.0f/sysconf(_SC_CLK_TCK);
+
+    FILE *uptime = fopen("/proc/uptime", "r");
+    if (uptime == NULL) {
+        printf("Error in open uptime file\n");
+        exit(0);
+    }
+    fscanf(file, "%lf", &time_from_boot);
+
+
 
     printf("\n");
     printf("%-10s%-15s%-10s%-10s%-10s\n", "PID", "CMD", "RTIME", "UTIME", "STIME");
-    printf("%-10d%-15s%-4.2lf%-6s%-4.2lf%-6s%-4.2lf%-6s\n", pid_get, cmd+1, utime + stime, " s", utime," s", stime," s");
+    printf("%-10d%-15s%-4.2lf%-6s%-4.2lf%-6s%-4.2lf%-6s\n", pid_get, cmd+1, time_from_boot - exec_from_boot, " s", utime," s", stime," s");
+
 }
