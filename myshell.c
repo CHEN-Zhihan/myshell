@@ -3,42 +3,16 @@
 #include "util.h"
 #include "parser.h"
 #include "execute.h"
-
-
-void SIGCHLD_handler() {
-    int pid = waitpid(-1, NULL, 0);
-    if (pid == getgpid(pid)) {
-        printf("zhe ge shi hou tai a\n");
-    }
-}
-
-void SIGCHLD_handler_wrapper() {
-    struct sigaction act;
-    memset(&act, 0, sizeof(sigaction));
-    act.sa_handler = SIGCHLD_handler;
-    act.sa_flags = SA_NOCLDSTOP;
-    sigaction(SIGINT, &act, NULL);
-}
-
-
-void SIGINT_handler_wrapper() {
-    struct sigaction act;
-    memset(&act, 0, sizeof(sigaction));
-    act.sa_handler = SIG_IGN;
-    act.sa_flags = 0;
-    sigaction(SIGINT, &act, NULL);
-}
-
-
-
-
-
+#include "sig.h"
+#include <sys/wait.h>
+#include <unistd.h>
+#include <errno.h>
 
 bool get_command(char * buffer) {
     memset(buffer, 0,BUFFER_SIZE * sizeof(char));
     char * input = fgets(buffer,BUFFER_SIZE,stdin);
-    if(input == nullptr) {
-        fprintf(stdout, "\n");
+    if (input == nullptr) {
+
         return false;
     }
     if (split_input(input,nullptr," ",false)>MAX_ARGS_NUMBER) {
@@ -48,10 +22,37 @@ bool get_command(char * buffer) {
     return true;
 }
 
+void printCmd(Command * cmd) {
+    printf("executing %s with %d arguments: ",cmd->argv[0],cmd->argc-1);
+    int i=0;
+    for (i=1;i!=cmd->argc;++i) {
+        printf("%s ", cmd->argv[i]);
+    }
+    printf("\n");
+}
+
+void printLine(Line * line) {
+    if (line->type==TIMEX_TYPE) {
+        printf("timeXing\n");
+    }
+    Command * iterator= line->head;
+    while (iterator!=nullptr) {
+        printCmd(iterator);
+        iterator=iterator->next;
+        if (iterator!=nullptr) {
+            printf("piping \n");
+        }
+    }
+    if (line->background) {
+        printf("in background\n");
+    }
+}
+
 int main(int argc, char const *argv[]) {
-    
+
     SIGINT_handler_wrapper();
     SIGCHLD_handler_wrapper();
+    SIGUSR1_parent_handler_wrapper();
 
     char buffer[BUFFER_SIZE];
     while (true) {
@@ -60,6 +61,7 @@ int main(int argc, char const *argv[]) {
             char * input = strndup(buffer,strlen(buffer) - 1);
             Line * line = parse(input);
             if (line) {
+                printLine(line);
                 execute(line);
             }
             free(input);
