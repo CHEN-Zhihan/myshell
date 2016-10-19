@@ -7,7 +7,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <errno.h>
-
+extern sig_atomic_t sigusr1_flag;
 bool get_command(char * buffer) {
     memset(buffer, 0,BUFFER_SIZE * sizeof(char));
     char * input = fgets(buffer,BUFFER_SIZE,stdin);
@@ -52,17 +52,18 @@ int main(int argc, char const *argv[]) {
 
     SIGINT_handler_wrapper();
     SIGCHLD_handler_wrapper();
-    SIGUSR1_parent_handler_wrapper();
+    SIGUSR1_handler_wrapper();
 
     char buffer[BUFFER_SIZE];
     while (true) {
         fprintf(stdout, "## myshell $ ");
         if (get_command(buffer)) {
+            sigusr1_flag = 0;
             char * input = strndup(buffer,strlen(buffer) - 1);
             Line * line = parse(input);
             if (line) {
                 printLine(line);
-                usleep(100);
+              //  usleep(5000);
                 execute(line);
             }
             free(input);

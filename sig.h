@@ -17,6 +17,8 @@ void SIGUSR1_parent_handler_wrapper();
 void SIGUSR1_child_handler_wrapper();
 void SIGINT_handler_wrapper();
 
+void SIGUSR1_handler_wrapper();
+
 
 
 #endif

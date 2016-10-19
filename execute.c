@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <wait.h>
+#include "util.h"
 #include "sig.h"
 #include "viewtree.h"
 //#define BUFFER_SIZE 3
@@ -12,10 +13,10 @@ void run_command(Command *cmd, int is_background) {
     if (is_background) {
         setpgid(0, 0);
     }
-    sigusr1_flag = 0;
     kill(getppid(), SIGUSR1);
+    printf("I am waiting for while\n");
     while(sigusr1_flag == 0);
-    usleep(200);
+    printf("I finished while waiting\n");
     execvp(cmd->argv[0], cmd->argv);
     fprintf(stderr, "myshell: '%s': %s\n", cmd->argv[0], strerror(errno));
     exit(EXIT_FAILURE);
@@ -26,33 +27,21 @@ void wait_wrapped(int pid, int is_background, int flag) {
         struct sigaction act;
         sigaction(SIGINT,nullptr,&act);
         signal(SIGINT,SIG_IGN);
+        printf("I am waiting for %d\n",pid);
         waitid(P_PID, pid, NULL, WNOWAIT | WEXITED);
         sigaction(SIGINT,&act,nullptr);
-    }           
+    }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 int safe_fork() {
+    fprintf(stderr, "0000\n");
     int pid = fork();
+    fprintf(stderr, "1111\n");
     if (pid == -1) {
         fprintf(stderr, "can not fork\n");
         return -1;
     }
-    if (pid == 0) {
-        SIGUSR1_child_handler_wrapper();
-    }
+    kill(pid, SIGUSR1);
     return pid;
 }
 
@@ -65,6 +54,7 @@ void execute(struct Line *line) {
     } else if (line->type==VIEWTREE_TYPE) {
         viewTree();
     } else {
+
         if (line->type==TIMEX_TYPE) {
             timeX_flag=1;
         }
@@ -89,20 +79,21 @@ void execute(struct Line *line) {
 
             pid_t pid = safe_fork();
             pid_list[pipe_number] = pid;
-
             if (pid == 0) {
                 pipe_out(pipefd[pipe_number]);
                 run_command(iterator, line->background);
             } //else {
                 //signal(SIGINT,SIG_IGN);
             //}
-
+            printf("4 I am here!!!\n");          
             while(iterator->next->next != NULL) {
-                
+                printf("iterating on: %s\n",iterator->argv[0]);
                 iterator = iterator -> next;
                 ++pipe_number;
                 pipe(pipefd[pipe_number]);
+                fprintf(stderr,"before fork\n");
                 pid_t pid = safe_fork();
+                fprintf(stderr,"after fork\n");                
                 pid_list[pipe_number] = pid;
                 if(pid == 0) {
                     pipe_in(pipefd[pipe_number-1]);
@@ -111,10 +102,9 @@ void execute(struct Line *line) {
                 }else if (pid > 0) {
                     close_pipe(pipefd[pipe_number-1]);
                 }
+                printf("finished iterating on: %s\n",iterator->argv[0]);
             }
-
             iterator = iterator->next;
-
             pid = safe_fork();
 
             if (pid == 0) {
@@ -123,14 +113,18 @@ void execute(struct Line *line) {
             }else if (pid > 0) {
                 close_pipe(pipefd[pipe_number]);
             }
-
+            printf("5 I am here!!!\n");          
             wait_wrapped(pid, line->background, line->type);
+           
             //sigaction(SIGINT,&act,nullptr);
             for (size_t i = 0; i < pipe_number + 1; i++) {
                 wait_wrapped(pid_list[i], line->background, line->type);
-            }
+            }    
+            printf("6 I am here!!!\n");          
+            
         }
         timeX_flag=0;
+        
     }
 }
 
