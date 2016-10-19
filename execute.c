@@ -36,6 +36,7 @@ int safe_fork() {
         return -1;
     }
     if (pid>0) {
+        usleep(200);
         kill(pid, SIGUSR1);
     }
     return pid;
