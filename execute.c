@@ -4,7 +4,8 @@
 #include <wait.h>
 #include "sig.h"
 //#define BUFFER_SIZE 3
-extern int sigusr1_flag;
+extern sig_atomic_t sigusr1_flag;
+extern sig_atomic_t timeX_flag;
 
 void run_command(Command *cmd, int is_background) {
     if (is_background) {
@@ -22,12 +23,8 @@ void wait_wrapped(int pid, int is_background, int flag) {
     if (!is_background) {
         struct sigaction act;
         sigaction(SIGINT,nullptr,&act);
-        if (flag) {
-            waitid(P_PID, pid, NULL, WNOWAIT | WEXITED);
-            print_timeX(pid);
-        }
         signal(SIGINT,SIG_IGN);
-        waitpid(pid, NULL, 0);
+        waitid(P_PID, pid, NULL, WNOWAIT | WEXITED);
         sigaction(SIGINT,&act,nullptr);
     }           
 }
@@ -158,7 +155,6 @@ PIDNode * getPIDList() {
         ssize_t readSize=0;
         PIDNode * pidList=nullptr;
         PIDNode * iterator=nullptr;
-        waitpid(lsPID,nullptr,0);
         do {
             memset(buffer,0,BUFFER_SIZE*sizeof(char));
             readSize=read(pfd[0],buffer,BUFFER_SIZE);
@@ -313,8 +309,9 @@ void execute(struct Line *line) {
     } else if (line->type==VIEWTREE_TYPE) {
         viewTree();
     } else {
-        //struct sigaction act;
-        //sigaction(SIGINT,nullptr,&act);
+        if (line->type==TIMEX_TYPE) {
+            timeX_flag=1;
+        }
         if (line->head->next == NULL) {
             int pid = safe_fork();
             if (pid == 0) {
@@ -377,6 +374,7 @@ void execute(struct Line *line) {
                 wait_wrapped(pid_list[i], line->background, line->type);
             }
         }
+        timeX_flag=0;
     }
 }
 

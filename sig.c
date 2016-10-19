@@ -1,6 +1,7 @@
 #include "sig.h"
-
-int sigusr1_flag = 0;
+#include "execute.h"
+volatile sig_atomic_t sigusr1_flag =0;
+volatile sig_atomic_t timeX_flag=0;
 
 
 void SIGCHLD_handler(int signum, siginfo_t * info, void *context) {
@@ -13,8 +14,11 @@ void SIGCHLD_handler(int signum, siginfo_t * info, void *context) {
         PIDNode *pnode = buildPIDNode(pid);
         printf("[%d] %s Done\n",pid, pnode->name);
         fflush(stdout);
-        waitpid(pid, NULL, 0);
+    } else if (timeX_flag) {
+        print_timeX(pid);
     }
+    waitpid(pid, NULL, 0);
+    
 }
 
 void SIGINT_handler(int signum) {
