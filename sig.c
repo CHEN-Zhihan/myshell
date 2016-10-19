@@ -11,7 +11,8 @@ void SIGCHLD_handler(int signum, siginfo_t * info, void *context) {
     }
     if (pid == gid) {
         PIDNode *pnode = buildPIDNode(pid);
-        printf("[%d] %s Done",pid, pnode->name);
+        printf("[%d] %s Done\n",pid, pnode->name);
+        fflush(stdout);
         waitpid(pid, NULL, 0);
     }
 }

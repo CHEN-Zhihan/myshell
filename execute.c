@@ -418,12 +418,13 @@ void print_timeX(int pid) {
         printf("Error in open uptime file\n");
         exit(0);
     }
-    fscanf(file, "%lf", &time_from_boot);
-
-
+    fscanf(uptime, "%lf", &time_from_boot);
+    fclose(uptime);
+    double runtime=time_from_boot-exec_from_boot;
+    runtime=runtime<0?0:runtime;
 
     printf("\n");
     printf("%-10s%-15s%-10s%-10s%-10s\n", "PID", "CMD", "RTIME", "UTIME", "STIME");
-    printf("%-10d%-15s%-4.2lf%-6s%-4.2lf%-6s%-4.2lf%-6s\n", pid_get, cmd+1, time_from_boot - exec_from_boot, " s", utime," s", stime," s");
+    printf("%-10d%-15s%-4.2lf%-6s%-4.2lf%-6s%-4.2lf%-6s\n", pid_get, cmd+1,runtime, " s", utime," s", stime," s");
 
 }

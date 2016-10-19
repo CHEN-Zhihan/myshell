@@ -142,6 +142,7 @@ Line * processBuiltin(Line * line) {
 Command * parseCommand(char * input) {
     Command * result = (Command *)malloc(sizeof(Command));
     result->argc=split_input(input,result->argv," ",true);
+    result->argv[result->argc]=nullptr;
     if (strcmp(result->argv[result->argc-1],"&\0")==0) {
         free(result->argv[--result->argc]);
         result->argv[result->argc]=nullptr;
