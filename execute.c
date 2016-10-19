@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <wait.h>
+#include "util.h"
 #include "sig.h"
 #include "viewtree.h"
 //#define BUFFER_SIZE 3
@@ -12,10 +13,8 @@ void run_command(Command *cmd, int is_background) {
     if (is_background) {
         setpgid(0, 0);
     }
-    sigusr1_flag = 0;
     kill(getppid(), SIGUSR1);
     while(sigusr1_flag == 0);
-    usleep(600);
     execvp(cmd->argv[0], cmd->argv);
     fprintf(stderr, "myshell: '%s': %s\n", cmd->argv[0], strerror(errno));
     exit(EXIT_FAILURE);
@@ -31,14 +30,13 @@ void wait_wrapped(int pid, int is_background, int flag) {
     }
 }
 int safe_fork() {
+    sigusr1_flag = 0;
     int pid = fork();
     if (pid == -1) {
         fprintf(stderr, "can not fork\n");
         return -1;
     }
-    if (pid == 0) {
-        SIGUSR1_child_handler_wrapper();
-    }
+    kill(pid, SIGUSR1);
     return pid;
 }
 
@@ -51,6 +49,7 @@ void execute(struct Line *line) {
     } else if (line->type==VIEWTREE_TYPE) {
         viewTree();
     } else {
+
         if (line->type==TIMEX_TYPE) {
             timeX_flag=1;
         }
@@ -75,16 +74,13 @@ void execute(struct Line *line) {
 
             pid_t pid = safe_fork();
             pid_list[pipe_number] = pid;
-
             if (pid == 0) {
                 pipe_out(pipefd[pipe_number]);
                 run_command(iterator, line->background);
             } //else {
                 //signal(SIGINT,SIG_IGN);
             //}
-
             while(iterator->next->next != NULL) {
-                
                 iterator = iterator -> next;
                 ++pipe_number;
                 pipe(pipefd[pipe_number]);
@@ -98,9 +94,7 @@ void execute(struct Line *line) {
                     close_pipe(pipefd[pipe_number-1]);
                 }
             }
-
             iterator = iterator->next;
-
             pid = safe_fork();
 
             if (pid == 0) {
@@ -109,14 +103,15 @@ void execute(struct Line *line) {
             }else if (pid > 0) {
                 close_pipe(pipefd[pipe_number]);
             }
-
             wait_wrapped(pid, line->background, line->type);
+           
             //sigaction(SIGINT,&act,nullptr);
             for (size_t i = 0; i < pipe_number + 1; i++) {
                 wait_wrapped(pid_list[i], line->background, line->type);
-            }
+            }    
         }
         timeX_flag=0;
+        
     }
 }
 

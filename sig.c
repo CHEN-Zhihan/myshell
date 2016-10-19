@@ -24,11 +24,8 @@ void SIGINT_handler(int signum) {
     printf("\n");
 }
 
-void SIGUSR1_parent_handler(int signum, siginfo_t * info, void *context) {
-    kill(info->si_pid, SIGUSR1);
-}
 
-void SIGUSR1_child_handler(int signum) {
+void SIGUSR1_handler(int signum) {
     sigusr1_flag = 1;
 }
 
@@ -42,7 +39,16 @@ void SIGCHLD_handler_wrapper() {
     act.sa_flags |= SA_NODEFER;
     sigaction(SIGCHLD, &act, NULL);
 }
-
+void SIGUSR1_handler_wrapper() {
+    struct sigaction act;
+    sigaction(SIGUSR1, NULL, &act);
+    act.sa_handler = SIGUSR1_handler;
+    act.sa_flags |= SA_SIGINFO;
+    act.sa_flags |= SA_RESTART;
+    act.sa_flags |= SA_NODEFER;
+    sigaction(SIGUSR1, &act, NULL);
+}
+/*
 void SIGUSR1_parent_handler_wrapper() {
     struct sigaction act;
     sigaction(SIGUSR1, NULL, &act);
@@ -60,7 +66,7 @@ void SIGUSR1_child_handler_wrapper() {
     act.sa_flags |= SA_RESTART;
     sigaction(SIGUSR1, &act, NULL);
 }
-
+*/
 
 void SIGINT_handler_wrapper() {
     struct sigaction act;

@@ -7,7 +7,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <errno.h>
-
 bool get_command(char * buffer) {
     memset(buffer, 0,BUFFER_SIZE * sizeof(char));
     char * input = fgets(buffer,BUFFER_SIZE,stdin);
@@ -52,7 +51,7 @@ int main(int argc, char const *argv[]) {
 
     SIGINT_handler_wrapper();
     SIGCHLD_handler_wrapper();
-    SIGUSR1_parent_handler_wrapper();
+    SIGUSR1_handler_wrapper();
 
     char buffer[BUFFER_SIZE];
     while (true) {
@@ -62,8 +61,6 @@ int main(int argc, char const *argv[]) {
             Line * line = parse(input);
             if (line) {
                 printLine(line);
-                usleep(1000);
-                fflush(stdin);
                 execute(line);
             }
             free(input);

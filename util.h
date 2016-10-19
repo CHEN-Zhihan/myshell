@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/types.h>
 #ifndef nullptr
 #define nullptr NULL
 #endif
