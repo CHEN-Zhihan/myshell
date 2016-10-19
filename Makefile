@@ -1,7 +1,7 @@
 
 
 myshell: myshell.c util execute parser sig viewtree
-	gcc myshell.c util.o execute.o parser.o sig.o viewtree -o myshell.o
+	gcc myshell.c util.o execute.o parser.o sig.o viewtree.o -o myshell.o
 
 execute: execute.c
 	gcc -c execute.c
