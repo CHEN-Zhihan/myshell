@@ -27,8 +27,9 @@ void freeCommand(Command * cmd) {
 
 void freeLine(Line * line) {
     Command * iterator = line->head;
+    Command * temp=nullptr;
     while (iterator) {
-        Command * temp = iterator;
+        temp = iterator;
         iterator=iterator->next;
         freeCommand(temp);
     }
@@ -142,6 +143,7 @@ Line * processBuiltin(Line * line) {
 Command * parseCommand(char * input) {
     Command * result = (Command *)malloc(sizeof(Command));
     result->argc=split_input(input,result->argv," ",true);
+    result->argv[result->argc]=nullptr;
     if (strcmp(result->argv[result->argc-1],"&\0")==0) {
         free(result->argv[--result->argc]);
         result->argv[result->argc]=nullptr;
@@ -171,13 +173,13 @@ Line * parse(char * line) {
     while (i<cmdNumber) {
         if (iterator==nullptr) {
             result->head=parseCommand(rawCmd[i]);
-            free(rawCmd[i]);
             iterator=result->head;
         } else {
             iterator->next=parseCommand(rawCmd[i]);
-            free(rawCmd[i]);
             iterator=iterator->next;
         }
+        free(rawCmd[i]);
+        rawCmd[i]=nullptr;
         ++i;
     }
     result = processBuiltin(result);
