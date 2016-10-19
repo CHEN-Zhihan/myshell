@@ -1,5 +1,6 @@
 #include "util.h"
 #include <unistd.h>
+
 char * getLastOne(char * buffer) {
     ssize_t i=BUFFER_SIZE-1;
     while (buffer[i]!='\n') {
@@ -66,7 +67,7 @@ char * copy(char * buffer,ssize_t i, ssize_t j) {
     return result;
 }
 
-PIDNode * buildFromBuffer(char * buffer, PIDNode** iterator,ssize_t size,pid_t lsPID) {
+PIDNode * buildFromBuffer(char * buffer, PIDNode** iterator,ssize_t size) {
     PIDNode * head=nullptr;
     if (size==BUFFER_SIZE&&buffer[size]!='\n') {
         while(buffer[size]!='\n') {
@@ -88,33 +89,32 @@ PIDNode * buildFromBuffer(char * buffer, PIDNode** iterator,ssize_t size,pid_t l
         }
         char * pid=copy(buffer,i,j);
         i=j;
-        if (lsPID!=atoi(pid)) {
-            if ((*iterator)==nullptr) {
-                (*iterator)=buildPIDNode(atoi(pid));
-                head=*iterator;
-            } else {
-                (*iterator)->next=buildPIDNode(atoi(pid));
-                if ((*iterator)->next!=nullptr) {
-                    (*iterator)=(*iterator)->next;
-                }
+        if ((*iterator)==nullptr) {
+            (*iterator)=buildPIDNode(atoi(pid));
+            head=*iterator;
+        } else {
+            (*iterator)->next=buildPIDNode(atoi(pid));
+            if ((*iterator)->next!=nullptr) {
+                (*iterator)=(*iterator)->next;
             }
         }
-        free(pid);
-        pid=nullptr;
     }
     return head;
 }
-PIDNode * getPIDList() {
+
+PIDNode * getChildren(pid_t pid) {
     int pfd[2];
     pipe(pfd);
-    pid_t lsPID=0;
-    if ((lsPID=fork())==0) {
+    pid_t pgrepPID=0;
+    if ((pgrepPID=fork())==0) {
         close(pfd[0]);
         dup2(pfd[1],1);
-        char *command[3]={(char*)"ls",(char*)"/proc",nullptr};
+        char * PID=(char *)malloc(sizeof(char)*MAX_PROC_FILE_PATH);
+        sprintf(PID,"%d",pid);
+        char *command[4]={(char*)"pgrep",(char*)"-P",PID,nullptr};
         execvp(command[0],command);
         return nullptr;
-    } else if (lsPID>0) {
+    } else if (pgrepPID>0){
         close(pfd[1]);
         char *lastOne=nullptr;
         char buffer[BUFFER_SIZE];
@@ -129,7 +129,7 @@ PIDNode * getPIDList() {
                 if (lastOne!=nullptr) {
                     combined=buffer[0]=='\n'?lastOne:combine(buffer,lastOne);
                     lastOne=nullptr;
-                    if (isPID(combined)&&atoi(combined)!=lsPID) {
+                    if (isPID(combined)) {
                         iterator->next=buildPIDNode(atoi(combined));
                         if (iterator->next!=nullptr) {
                             iterator=iterator->next;
@@ -139,9 +139,9 @@ PIDNode * getPIDList() {
                     combined=nullptr;
                 }
                 if (pidList==nullptr) {
-                    pidList=buildFromBuffer(buffer,&iterator,readSize,lsPID);
+                    pidList=buildFromBuffer(buffer,&iterator,readSize);
                 } else {
-                    buildFromBuffer(buffer,&iterator,readSize,lsPID);
+                    buildFromBuffer(buffer,&iterator,readSize);
                 }
                 if (readSize==BUFFER_SIZE &&buffer[readSize-1]!='\n') {
                     lastOne=getLastOne(buffer);
@@ -154,43 +154,6 @@ PIDNode * getPIDList() {
     }
 }
 
-PIDNode * extract(PIDNode ** list,pid_t ppid) {
-    PIDNode *result=nullptr;
-    PIDNode * resultIterator=nullptr;
-    PIDNode * listIterator=*list;
-    if (listIterator==nullptr) {
-        return nullptr;
-    }
-    while(listIterator!=nullptr&&listIterator->PPID==ppid) {
-        printf("beginning: Found %d %s with PPID: %d\n",listIterator->PID,listIterator->name,listIterator->PPID);
-        if (result==nullptr) {
-            result=listIterator;
-            resultIterator=result;
-        } else {
-            resultIterator->next=listIterator;
-            resultIterator=resultIterator->next;
-        }
-        listIterator=listIterator->next;
-        *list=listIterator;
-        resultIterator->next=nullptr;
-    }
-    while (listIterator!=nullptr&&listIterator->next!=nullptr) {
-        if (listIterator->next->PPID==ppid) {
-            printf("middle: Found %d %s with PPID: %d\n",listIterator->next->PID,listIterator->next->name,listIterator->next->PPID);
-            if (result==nullptr) {
-                result=listIterator->next;
-                resultIterator=result;
-            } else {
-                resultIterator->next=listIterator->next;
-                resultIterator=resultIterator->next;
-            }
-            listIterator->next=listIterator->next->next;
-            resultIterator->next=nullptr;
-        }
-        listIterator=listIterator->next;
-    }
-    return result;
-}
 
 PIDNode * freeList(PIDNode * list) {
     PIDNode * iterator=list;
@@ -206,11 +169,11 @@ PIDNode * freeList(PIDNode * list) {
 
 
 
-PIDNode * buildTree(PIDNode **list, PIDNode* root) {
-    root->child=extract(list,root->PID);
+PIDNode * buildTree(PIDNode* root) {
+    root->child=getChildren(root->PID);
     PIDNode * iterator=root->child;
     while (iterator!=nullptr) {
-        iterator=buildTree(list,iterator);
+        iterator=buildTree(iterator);
         iterator=iterator->next;
     }
     return root;
@@ -248,11 +211,9 @@ PIDNode * freeTree(PIDNode * root) {
 }
 
 void viewTree() {
-    PIDNode * list = getPIDList();
     PIDNode * root=buildPIDNode(getpid());
-    root = buildTree(&list,root);
+    root = buildTree(root);
     printTree(root);
-    list=freeList(list);
     root=freeTree(root);
     return;
 }

@@ -15,7 +15,7 @@ void run_command(Command *cmd, int is_background) {
     sigusr1_flag = 0;
     kill(getppid(), SIGUSR1);
     while(sigusr1_flag == 0);
-    usleep(200);
+    usleep(600);
     execvp(cmd->argv[0], cmd->argv);
     fprintf(stderr, "myshell: '%s': %s\n", cmd->argv[0], strerror(errno));
     exit(EXIT_FAILURE);
@@ -28,22 +28,8 @@ void wait_wrapped(int pid, int is_background, int flag) {
         signal(SIGINT,SIG_IGN);
         waitid(P_PID, pid, NULL, WNOWAIT | WEXITED);
         sigaction(SIGINT,&act,nullptr);
-    }           
+    }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 int safe_fork() {
     int pid = fork();
     if (pid == -1) {

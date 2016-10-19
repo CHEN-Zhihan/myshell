@@ -39,6 +39,7 @@ void SIGCHLD_handler_wrapper() {
     act.sa_flags |= SA_NOCLDSTOP;
     act.sa_flags |= SA_SIGINFO;
     act.sa_flags |= SA_RESTART;
+    act.sa_flags |= SA_NODEFER;
     sigaction(SIGCHLD, &act, NULL);
 }
 
