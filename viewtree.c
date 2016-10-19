@@ -33,7 +33,7 @@ char* combine(char * buffer,char *lastOne) {
     j=0;
     while (j!=i) {
         result[lastSize+j]=buffer[j];
-        buffer[j]='x'; //combined;
+        buffer[j]='\n'; //combined;
         ++j;
     }
     result[lastSize+j]='\0';
@@ -41,20 +41,6 @@ char* combine(char * buffer,char *lastOne) {
     return result;
 }
 
-bool isDigit(char c) {
-    return c>='0'&&c<='9';
-}
-
-bool isPID(char *str) {
-    ssize_t i=0;
-    ssize_t j=strlen(str);
-    for (i=0;i!=j;++i) {
-        if (!isDigit(str[i])) {
-            return false;
-        }
-    }
-    return true;
-}
 
 char * copy(char * buffer,ssize_t i, ssize_t j) {
     char * result=(char*)malloc(sizeof(char)*(j-i+1));
@@ -76,19 +62,12 @@ PIDNode * buildFromBuffer(char * buffer, PIDNode** iterator,ssize_t size) {
     }
     ssize_t i=0;
     ssize_t j=0;
-    while (i!=size) {
-        while (!isDigit(buffer[i])&&i<size) {
-            ++i;
-        }
-        if (i>=size) {
-            break;
-        }
-        j=i;
-        while(isDigit(buffer[j])) {
+    while (j!=size) {
+        i=j;
+        while(buffer[j]!='\n') {
             ++j;
         }
         char * pid=copy(buffer,i,j);
-        i=j;
         if ((*iterator)==nullptr) {
             (*iterator)=buildPIDNode(atoi(pid));
             head=*iterator;
@@ -98,6 +77,7 @@ PIDNode * buildFromBuffer(char * buffer, PIDNode** iterator,ssize_t size) {
                 (*iterator)=(*iterator)->next;
             }
         }
+        ++j;
     }
     return head;
 }
@@ -129,11 +109,9 @@ PIDNode * getChildren(pid_t pid) {
                 if (lastOne!=nullptr) {
                     combined=buffer[0]=='\n'?lastOne:combine(buffer,lastOne);
                     lastOne=nullptr;
-                    if (isPID(combined)) {
-                        iterator->next=buildPIDNode(atoi(combined));
-                        if (iterator->next!=nullptr) {
-                            iterator=iterator->next;
-                        }
+                    iterator->next=buildPIDNode(atoi(combined));
+                    if (iterator->next!=nullptr) {
+                        iterator=iterator->next;
                     }
                     free(combined);
                     combined=nullptr;
@@ -153,20 +131,6 @@ PIDNode * getChildren(pid_t pid) {
         return pidList;
     }
 }
-
-
-PIDNode * freeList(PIDNode * list) {
-    PIDNode * iterator=list;
-    PIDNode * temp=nullptr;
-    while (iterator!=nullptr) {
-        temp=iterator;
-        iterator=iterator->next;
-        free(temp->name);
-        free(temp);
-    }
-    return nullptr;
-}
-
 
 
 PIDNode * buildTree(PIDNode* root) {
@@ -193,14 +157,16 @@ void printTree(PIDNode * root) {
     }
     while (iterator!=nullptr) {
         ssize_t j=0;
-        for(j=0;j!=strlen(root->name)+1;++j) {
+        for(j=0;j!=strlen(root->name);++j) {
             printf(" ");
         }
+        printf("-");
         printTree(iterator);
         iterator=iterator->next;
     }
 }
 
+// /home/zhchen/HKU/COMP3230/assignments/myshell/test/loopf 3600&
 PIDNode * freeTree(PIDNode * root) {
     if (root!=nullptr) {
         freeTree(root->next);

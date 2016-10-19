@@ -49,11 +49,17 @@ PIDNode * buildPIDNode(pid_t inp) {
     fscanf(file, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu", &pid, name, &stat, &ppid, &z, &z, &z, &z,
            (unsigned *)&z, &h, &h, &h, &h, &ut, &st);
     fclose(file);
-
+    char * newName=(char*)malloc(sizeof(char)*(strlen(name)-1));
+    int j=0;
+    for (j=0;j!=strlen(name)-2;++j) {
+        newName[j]=name[j+1];
+    }
+    newName[j]='\0';
+    free(name);
     PIDNode * result = (PIDNode*)(malloc(sizeof(PIDNode)));
     result->PPID=ppid;
     result->PID=pid;
-    result->name=name;
+    result->name=newName;
     result->child=nullptr;
     result->next=nullptr;
     return result;

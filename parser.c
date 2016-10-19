@@ -27,8 +27,9 @@ void freeCommand(Command * cmd) {
 
 void freeLine(Line * line) {
     Command * iterator = line->head;
+    Command * temp=nullptr;
     while (iterator) {
-        Command * temp = iterator;
+        temp = iterator;
         iterator=iterator->next;
         freeCommand(temp);
     }
@@ -172,13 +173,13 @@ Line * parse(char * line) {
     while (i<cmdNumber) {
         if (iterator==nullptr) {
             result->head=parseCommand(rawCmd[i]);
-            free(rawCmd[i]);
             iterator=result->head;
         } else {
             iterator->next=parseCommand(rawCmd[i]);
-            free(rawCmd[i]);
             iterator=iterator->next;
         }
+        free(rawCmd[i]);
+        rawCmd[i]=nullptr;
         ++i;
     }
     result = processBuiltin(result);
