@@ -13,7 +13,6 @@ void run_command(Command *cmd, int is_background) {
     if (is_background) {
         setpgid(0, 0);
     }
-    kill(getppid(), SIGUSR1);
     while(sigusr1_flag == 0);
     execvp(cmd->argv[0], cmd->argv);
     fprintf(stderr, "myshell: '%s': %s\n", cmd->argv[0], strerror(errno));
@@ -36,7 +35,9 @@ int safe_fork() {
         fprintf(stderr, "can not fork\n");
         return -1;
     }
-    kill(pid, SIGUSR1);
+    if (pid>0) {
+        kill(pid, SIGUSR1);
+    }
     return pid;
 }
 
