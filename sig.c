@@ -24,13 +24,6 @@ void SIGINT_handler(int signum) {
     printf("\n");
 }
 
-/*void SIGUSR1_parent_handler(int signum, siginfo_t * info, void *context) {
-    kill(info->si_pid, SIGUSR1);
-}
-
-void SIGUSR1_child_handler(int signum) {
-    sigusr1_flag = 1;
-}*/
 
 void SIGUSR1_handler(int signum) {
     sigusr1_flag = 1;

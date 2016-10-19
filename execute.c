@@ -14,9 +14,7 @@ void run_command(Command *cmd, int is_background) {
         setpgid(0, 0);
     }
     kill(getppid(), SIGUSR1);
-    printf("I am waiting for while\n");
     while(sigusr1_flag == 0);
-    printf("I finished while waiting\n");
     execvp(cmd->argv[0], cmd->argv);
     fprintf(stderr, "myshell: '%s': %s\n", cmd->argv[0], strerror(errno));
     exit(EXIT_FAILURE);
@@ -27,16 +25,14 @@ void wait_wrapped(int pid, int is_background, int flag) {
         struct sigaction act;
         sigaction(SIGINT,nullptr,&act);
         signal(SIGINT,SIG_IGN);
-        printf("I am waiting for %d\n",pid);
         waitid(P_PID, pid, NULL, WNOWAIT | WEXITED);
         sigaction(SIGINT,&act,nullptr);
     }
 }
 
 int safe_fork() {
-    fprintf(stderr, "0000\n");
+    sigusr1_flag = 0;
     int pid = fork();
-    fprintf(stderr, "1111\n");
     if (pid == -1) {
         fprintf(stderr, "can not fork\n");
         return -1;
@@ -85,15 +81,11 @@ void execute(struct Line *line) {
             } //else {
                 //signal(SIGINT,SIG_IGN);
             //}
-            printf("4 I am here!!!\n");          
             while(iterator->next->next != NULL) {
-                printf("iterating on: %s\n",iterator->argv[0]);
                 iterator = iterator -> next;
                 ++pipe_number;
                 pipe(pipefd[pipe_number]);
-                fprintf(stderr,"before fork\n");
                 pid_t pid = safe_fork();
-                fprintf(stderr,"after fork\n");                
                 pid_list[pipe_number] = pid;
                 if(pid == 0) {
                     pipe_in(pipefd[pipe_number-1]);
@@ -102,7 +94,6 @@ void execute(struct Line *line) {
                 }else if (pid > 0) {
                     close_pipe(pipefd[pipe_number-1]);
                 }
-                printf("finished iterating on: %s\n",iterator->argv[0]);
             }
             iterator = iterator->next;
             pid = safe_fork();
@@ -113,15 +104,12 @@ void execute(struct Line *line) {
             }else if (pid > 0) {
                 close_pipe(pipefd[pipe_number]);
             }
-            printf("5 I am here!!!\n");          
             wait_wrapped(pid, line->background, line->type);
            
             //sigaction(SIGINT,&act,nullptr);
             for (size_t i = 0; i < pipe_number + 1; i++) {
                 wait_wrapped(pid_list[i], line->background, line->type);
             }    
-            printf("6 I am here!!!\n");          
-            
         }
         timeX_flag=0;
         
