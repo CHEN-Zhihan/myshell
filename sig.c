@@ -1,4 +1,8 @@
 #include "sig.h"
+
+int sigusr1_flag = 0;
+
+
 void SIGCHLD_handler(int signum, siginfo_t * info, void *context) {
     int pid = info->si_pid;
     int gid = getpgid(pid);
@@ -21,7 +25,7 @@ void SIGUSR1_parent_handler(int signum, siginfo_t * info, void *context) {
 }
 
 void SIGUSR1_child_handler(int signum) {
-    flag = 1;
+    sigusr1_flag = 1;
 }
 
 void SIGCHLD_handler_wrapper() {

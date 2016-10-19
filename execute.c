@@ -4,6 +4,7 @@
 #include <wait.h>
 #include "sig.h"
 //#define BUFFER_SIZE 3
+extern int sigusr1_flag;
 
 void run_command(Command *cmd, int is_background) {
     if (is_background) {
@@ -298,7 +299,7 @@ int safe_fork() {
         return -1;
     }
     if (pid == 0) {
-        void SIGUSR1_child_handler_wrapper();
+        SIGUSR1_child_handler_wrapper();
     }
     return pid;
 }
