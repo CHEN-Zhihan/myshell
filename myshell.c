@@ -62,6 +62,7 @@ int main(int argc, char const *argv[]) {
             Line * line = parse(input);
             if (line) {
                 printLine(line);
+                usleep(100);
                 execute(line);
             }
             free(input);

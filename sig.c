@@ -18,7 +18,6 @@ void SIGCHLD_handler(int signum, siginfo_t * info, void *context) {
         print_timeX(pid);
     }
     waitpid(pid, NULL, 0);
-    while(waitpid(-1,nullptr,WNOHANG)>0);
 }
 
 void SIGINT_handler(int signum) {

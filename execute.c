@@ -15,6 +15,7 @@ void run_command(Command *cmd, int is_background) {
     sigusr1_flag = 0;
     kill(getppid(), SIGUSR1);
     while(sigusr1_flag == 0);
+    usleep(200);
     execvp(cmd->argv[0], cmd->argv);
     fprintf(stderr, "myshell: '%s': %s\n", cmd->argv[0], strerror(errno));
     exit(EXIT_FAILURE);

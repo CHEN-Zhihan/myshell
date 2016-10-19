@@ -162,7 +162,7 @@ PIDNode * extract(PIDNode ** list,pid_t ppid) {
         return nullptr;
     }
     while(listIterator!=nullptr&&listIterator->PPID==ppid) {
-        printf("Found %d %s with PPID: %d\n",listIterator->PID,listIterator->name,listIterator->PPID);
+        printf("beginning: Found %d %s with PPID: %d\n",listIterator->PID,listIterator->name,listIterator->PPID);
         if (result==nullptr) {
             result=listIterator;
             resultIterator=result;
@@ -176,7 +176,7 @@ PIDNode * extract(PIDNode ** list,pid_t ppid) {
     }
     while (listIterator!=nullptr&&listIterator->next!=nullptr) {
         if (listIterator->next->PPID==ppid) {
-            printf("Found %d %s with PPID: %d\n",listIterator->PID,listIterator->name,listIterator->PPID);
+            printf("middle: Found %d %s with PPID: %d\n",listIterator->next->PID,listIterator->next->name,listIterator->next->PPID);
             if (result==nullptr) {
                 result=listIterator->next;
                 resultIterator=result;
