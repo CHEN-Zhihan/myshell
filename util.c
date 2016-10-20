@@ -4,6 +4,10 @@
 #include <stdio.h>
 #include <unistd.h>
 
+
+/*
+    returns true if the input is all space and false if not.
+*/
 bool allSpace(char * input) {
     int i=0;
     while (input[i]!='\0') {
@@ -15,6 +19,10 @@ bool allSpace(char * input) {
     return true;
 }
 
+/*
+    It returns the number of non-space string in inp with delimiter.
+    If flag is true, the separated strings will be stored into output.
+*/
 int split_input(char *inp, char **output, char *delimiter, bool flag) {
     int i = 0;
     char *input = strdup(inp);
@@ -32,6 +40,9 @@ int split_input(char *inp, char **output, char *delimiter, bool flag) {
     return i;
 }
 
+/*
+    It creates a new string which is a copy of buffer from i to j.
+*/
 char * copy(char * buffer,ssize_t i, ssize_t j) {
     char * result=(char*)malloc(sizeof(char)*(j-i+1));
     ssize_t c=0;
@@ -43,6 +54,11 @@ char * copy(char * buffer,ssize_t i, ssize_t j) {
     return result;
 }
 
+/*
+    It reads /proc/inp/stat to get the statistics of process inp.
+    And then it create a new PIDNode to store the relevant information
+    and returns it.
+*/
 PIDNode * buildPIDNode(pid_t inp) {
     pid_t pid=0;
     char * name=(char*)malloc(sizeof(char)*MAX_PROC_FILE_PATH);
@@ -72,6 +88,9 @@ PIDNode * buildPIDNode(pid_t inp) {
     return result;
 }
 
+/*
+    release all memory allocated for cmd.
+*/
 void freeCommand(Command * cmd) {
     int i=0;
     for (;i!=cmd->argc;++i) {
@@ -80,6 +99,9 @@ void freeCommand(Command * cmd) {
     free(cmd);
 }
 
+/*
+    release all memory allocated for line.
+*/
 void freeLine(Line * line) {
     Command * iterator = line->head;
     Command * temp=nullptr;

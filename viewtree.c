@@ -4,6 +4,13 @@
 #include <string.h>
 #include <stdio.h>
 
+
+
+/*
+    If the last element of buffer is not \n, i.e., 
+    reading is incomplete, getLastOne returns the 
+    last incomplete part of PID.
+*/
 char * getLastOne(char * buffer) {
     ssize_t i=BUFFER_SIZE-1;
     while (buffer[i]!='\n') {
@@ -20,6 +27,13 @@ char * getLastOne(char * buffer) {
     return lastOne;
 }
 
+
+
+/*
+    If there's a separated PID due to the BUFFER_SIZE, combine uses 
+    the lastOne part of last buffer and current buffer to create a 
+    new complete PID string.
+*/
 char* combine(char * buffer,char *lastOne) {
     ssize_t i=0;
     while (buffer[i]!='\n') {
@@ -44,6 +58,12 @@ char* combine(char * buffer,char *lastOne) {
     return result;
 }
 
+
+/*
+    build a linked list from buffer with length size while updating iterator
+    and returns the head Node. It goes through the buffer and uses \n as its
+    delimiter. for each pattern, call buildPIDNode to create PIDNode.
+*/
 PIDNode * buildFromBuffer(char * buffer, PIDNode** iterator,ssize_t size) {
     PIDNode * head=nullptr;
     if (size==BUFFER_SIZE&&buffer[size]!='\n') {
@@ -73,6 +93,16 @@ PIDNode * buildFromBuffer(char * buffer, PIDNode** iterator,ssize_t size) {
     return head;
 }
 
+
+/*
+    getChildren returns a list of PIDNodes, which are
+    the children of process specified by pid. It forks 
+    a child process to execute pgrep -P pid and uses pipe
+    to get the result. The parent process reads all input
+    from child process and generates a list of PIDNodes using
+    buildFromBuffer;
+*/
+
 PIDNode * getChildren(pid_t pid) {
     int pfd[2];
     pipe(pfd);
@@ -84,7 +114,6 @@ PIDNode * getChildren(pid_t pid) {
         sprintf(PID,"%d",pid);
         char *command[4]={(char*)"pgrep",(char*)"-P",PID,nullptr};
         execvp(command[0],command);
-        return nullptr;
     } else if (pgrepPID>0){
         close(pfd[1]);
         char *lastOne=nullptr;
@@ -123,6 +152,11 @@ PIDNode * getChildren(pid_t pid) {
     }
 }
 
+/*
+    buildTree builds the process tree in a top-down order.
+    It calls getCHildren to generate the root's children and
+    for each child calls buildTree recursively'
+*/
 PIDNode * buildTree(PIDNode* root) {
     root->child=getChildren(root->PID);
     PIDNode * iterator=root->child;
@@ -133,6 +167,13 @@ PIDNode * buildTree(PIDNode* root) {
     return root;
 }
 
+
+/*
+    print the process tree recursively.
+    First print the current process name,
+    then iterate through its children and call 
+    printTree recursively.
+*/
 void printTree(PIDNode * root) {
     printf("%s",root->name);
     PIDNode * iterator=root->child;
@@ -156,6 +197,10 @@ void printTree(PIDNode * root) {
     }
 }
 
+
+/*
+    use post-order traversal to free the whole tree.
+*/
 PIDNode * freeTree(PIDNode * root) {
     if (root!=nullptr) {
         freeTree(root->next);
@@ -166,6 +211,12 @@ PIDNode * freeTree(PIDNode * root) {
     return nullptr;
 }
 
+/*
+    viewTree firstly builds a PIDNode using current pid.
+    Then it builds the whole process tree using this node.
+    After calling the printTree, it frees the memory allocated
+    and return.
+*/
 void viewTree() {
     PIDNode * root=buildPIDNode(getpid());
     root = buildTree(root);

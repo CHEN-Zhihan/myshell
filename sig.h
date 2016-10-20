@@ -8,4 +8,5 @@ void SIGUSR1_handler(int signum);
 void SIGCHLD_handler_wrapper();
 void SIGINT_handler_wrapper();
 void SIGUSR1_handler_wrapper();
+void cleanup_wrapper();
 #endif

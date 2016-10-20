@@ -2,6 +2,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
+
+/*
+    it examines the line from argument begin to argument end
+    or when it meets |.
+    If there's a non-space string between begin and end and 
+    the string does not contains &, there's a command between
+    begin and end and returns the length of that command. Else
+    it means that there's an illegal command between begin and end
+    and thus returns -1.
+*/
 int hasCmd(const char * line, const int begin, const int end) {
     int i=begin;
     bool hascmd=false;
@@ -18,6 +29,12 @@ int hasCmd(const char * line, const int begin, const int end) {
     }
 }
 
+
+/*
+    It checks whether the use of pipe and background is correct.
+    It returns -1 if it is incorrect and BACKGROUND_MODE if it is in
+    background or FOREGROUND_MODE it if is in foreground.
+*/
 int syntaxCheck(char * line) {
     ssize_t size = strlen(line);
     if(split_input(line, nullptr," ",false)==0) {
@@ -73,10 +90,16 @@ int syntaxCheck(char * line) {
     if (background!=nullptr) {
         return BACKGROUND_MODE;
     } else {
-        return FRONTGROUND_MODE;
+        return FOREGROUND_MODE;
     }
 }
 
+/*
+    It checks whether the use of exit and viewtree is correct.
+    They cannot have arguments or pipe or be run in background.
+    If it is incorrect, print corresponding error message to stderr
+    and returns nullptr. Else returns line directly.
+*/
 Line * process(Line * line, char * message) {
     if (line->head->argc!=1||line->head->next!=nullptr||line->background) {
         fprintf(stderr,"myshell: \"%s\" with other arguments!!!\n",message);
@@ -87,18 +110,22 @@ Line * process(Line * line, char * message) {
     }
 }
 
-
+/*
+    It checks the use of built-in command and set the
+    corresponding type. If there' illegal usage, returns
+    nullptr else returns the line with line->type set.
+*/
 Line * processBuiltin(Line * line) {
     Command * first = line->head;
-    if (strcmp(first->argv[0],"exit\0")==0) {
+    if (strcmp(first->argv[0],"exit\0")==0) { // exit built-in
         line->type=EXIT_TYPE;
         return process(line,"exit\0");
-    } else if (strcmp(first->argv[0],"viewtree\0")==0) {
+    } else if (strcmp(first->argv[0],"viewtree\0")==0) { //viewtree built-in
         line->type=VIEWTREE_TYPE;
         return process(line,"viewtree\0");
     }
     Command * iterator=line->head;
-    if (strcmp(iterator->argv[0],"timeX\0")==0) {
+    if (strcmp(iterator->argv[0],"timeX\0")==0) { //timeX built-in
         if (line->background) {
             fprintf(stderr,"myshell: \"timeX\" cannot be run in background mode\n");
             freeLine(line);
@@ -111,17 +138,22 @@ Line * processBuiltin(Line * line) {
         }
         --iterator->argc;
         int i=0;
+        free(iterator->argv[0]);
         for (i=0;i!=iterator->argc;++i) {
             iterator->argv[i]=iterator->argv[i+1];
         }
         iterator->argv[i]=nullptr;
         line->type=TIMEX_TYPE;
-    } else {
+    } else { // no built-in function.
         line->type=NORMAL_TYPE;
     }
     return line;
 }
 
+
+/*
+    
+*/
 Command * parseCommand(char * input) {
     Command * result = (Command *)malloc(sizeof(Command));
     result->argc=split_input(input,result->argv," ",true);
@@ -140,6 +172,10 @@ Command * parseCommand(char * input) {
     return result;
 }
 
+
+/*
+
+*/
 Line * parse(char * line) {
     int i=0;
     int syntaxResult = syntaxCheck(line);
