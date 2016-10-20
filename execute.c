@@ -1,11 +1,13 @@
 #include "execute.h"
-#include <unistd.h>
-#include <errno.h>
-#include <wait.h>
-#include "util.h"
 #include "sig.h"
 #include "viewtree.h"
-//#define BUFFER_SIZE 3
+#include <unistd.h>
+#include <wait.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include <stdlib.h>
+
 extern sig_atomic_t sigusr1_flag;
 extern sig_atomic_t timeX_flag;
 
@@ -28,6 +30,7 @@ void wait_wrapped(int pid, int is_background, int flag) {
         sigaction(SIGINT,&act,nullptr);
     }
 }
+
 int safe_fork() {
     sigusr1_flag = 0;
     int pid = fork();
@@ -41,16 +44,15 @@ int safe_fork() {
     return pid;
 }
 
-
 void execute(struct Line *line) {
-
     if (line->type ==EXIT_TYPE) {
         fprintf(stderr, "myshell: Terminated\n");
+        freeLine(line);
         exit(EXIT_SUCCESS);
     } else if (line->type==VIEWTREE_TYPE) {
+        freeLine(line);
         viewTree();
     } else {
-
         if (line->type==TIMEX_TYPE) {
             timeX_flag=1;
         }
@@ -59,28 +61,20 @@ void execute(struct Line *line) {
             if (pid == 0) {
                 run_command(line->head, line->background);
             }else if (pid > 0) {
-                //signal(SIGINT,SIG_IGN);
                 wait_wrapped(pid, line->background, line->type);
-                //sigaction(SIGINT,&act,nullptr);
             }
         } else {
-
             Command *iterator = line->head;
-
             int pipefd[MAX_PIPE_NUMBER][2];
             pid_t pid_list[MAX_PIPE_NUMBER] = {0};
             int pipe_number = 0;
-
             pipe(pipefd[pipe_number]);
-
             pid_t pid = safe_fork();
             pid_list[pipe_number] = pid;
             if (pid == 0) {
                 pipe_out(pipefd[pipe_number]);
                 run_command(iterator, line->background);
-            } //else {
-                //signal(SIGINT,SIG_IGN);
-            //}
+            } 
             while(iterator->next->next != NULL) {
                 iterator = iterator -> next;
                 ++pipe_number;
@@ -106,18 +100,13 @@ void execute(struct Line *line) {
             }
             wait_wrapped(pid, line->background, line->type);
            
-            //sigaction(SIGINT,&act,nullptr);
             for (size_t i = 0; i < pipe_number + 1; i++) {
                 wait_wrapped(pid_list[i], line->background, line->type);
             }    
         }
-
-        
+        freeLine(line);
     }
 }
-
-
-
 
 void print_timeX(int pid) {
     int pid_get;
@@ -128,10 +117,8 @@ void print_timeX(int pid) {
     sprintf(str, "/proc/%d/stat", pid);
     FILE *file = fopen(str, "r");
     if (file == NULL) {
-        printf("Error in open my proc file\n");
-        exit(0);
+        return;
     }
-
     int z;
     unsigned long h;
     char stat;
@@ -141,17 +128,14 @@ void print_timeX(int pid) {
     fscanf(file, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %d %d %d %d %d %d %d", &pid_get, cmd, &stat, &z, &z, &z, &z, &z,
            (unsigned *)&z, &h, &h, &h, &h, &ut, &st, &z, &z, &z, &z, &z, &z, &efb);
     fclose(file);
-
     cmd[strlen(cmd) - 1] = 0;
-
-
     double utime = ut*1.0f/sysconf(_SC_CLK_TCK);
     double stime = st*1.0f/sysconf(_SC_CLK_TCK);
     double exec_from_boot = efb*1.0f/sysconf(_SC_CLK_TCK);
 
     FILE *uptime = fopen("/proc/uptime", "r");
     if (uptime == NULL) {
-	return;
+	    return;
     }
     fscanf(uptime, "%lf", &time_from_boot);
     fclose(uptime);

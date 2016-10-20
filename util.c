@@ -1,5 +1,8 @@
 #include "util.h"
-
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
 
 bool allSpace(char * input) {
     int i=0;
@@ -11,7 +14,6 @@ bool allSpace(char * input) {
     }
     return true;
 }
-
 
 int split_input(char *inp, char **output, char *delimiter, bool flag) {
     int i = 0;
@@ -29,7 +31,18 @@ int split_input(char *inp, char **output, char *delimiter, bool flag) {
     free(input);
     return i;
 }
-// /home/zhchen/HKU/COMP3230/assignments/myshell/test/nested 5 &
+
+char * copy(char * buffer,ssize_t i, ssize_t j) {
+    char * result=(char*)malloc(sizeof(char)*(j-i+1));
+    ssize_t c=0;
+    while (c!=j-i) {
+        result[c]=buffer[i+c];
+        ++c;
+    }
+    result[c]='\0';
+    return result;
+}
+
 PIDNode * buildPIDNode(pid_t inp) {
     pid_t pid=0;
     char * name=(char*)malloc(sizeof(char)*MAX_PROC_FILE_PATH);
@@ -48,12 +61,7 @@ PIDNode * buildPIDNode(pid_t inp) {
     fscanf(file, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu", &pid, name, &stat, &ppid, &z, &z, &z, &z,
            (unsigned *)&z, &h, &h, &h, &h, &ut, &st);
     fclose(file);
-    char * newName=(char*)malloc(sizeof(char)*(strlen(name)-1));
-    int j=0;
-    for (j=0;j!=strlen(name)-2;++j) {
-        newName[j]=name[j+1];
-    }
-    newName[j]='\0';
+    char * newName=copy(name,1,strlen(name)-1);
     free(name);
     PIDNode * result = (PIDNode*)(malloc(sizeof(PIDNode)));
     result->PPID=ppid;
@@ -62,4 +70,23 @@ PIDNode * buildPIDNode(pid_t inp) {
     result->child=nullptr;
     result->next=nullptr;
     return result;
+}
+
+void freeCommand(Command * cmd) {
+    int i=0;
+    for (;i!=cmd->argc;++i) {
+        free(cmd->argv[i]);
+    }
+    free(cmd);
+}
+
+void freeLine(Line * line) {
+    Command * iterator = line->head;
+    Command * temp=nullptr;
+    while (iterator) {
+        temp = iterator;
+        iterator=iterator->next;
+        freeCommand(temp);
+    }
+    free(line);
 }

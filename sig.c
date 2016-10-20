@@ -1,5 +1,12 @@
 #include "sig.h"
 #include "execute.h"
+#include "util.h"
+#include <stdio.h>
+#include <unistd.h>
+#include <errno.h>
+#include <wait.h>
+
+
 volatile sig_atomic_t sigusr1_flag =0;
 volatile sig_atomic_t timeX_flag=0;
 
@@ -18,35 +25,6 @@ void SIGCHLD_handler(int signum, siginfo_t * info, void *context) {
         print_timeX(pid);
     }
     waitpid(pid, NULL, 0);
-    
-    /*while(1) {
-
-        siginfo_t tmp;
-        tmp.si_pid = -5;
-        printf("%d\n", tmp.si_pid);
-        waitid(P_ALL, pid, &tmp, WNOWAIT | WNOHANG);
-        printf("%d\n", tmp.si_pid);
-        int pid = tmp.si_pid;
-        if(pid > 0) {
-            printf("hhhh\n");
-            exit(0);
-            int gid = getpgid(pid);
-            if(gid == -1) {
-                errno = 0;
-            }
-            if (pid == gid) {
-                PIDNode *pnode = buildPIDNode(pid);
-                printf("[%d] %s Done\n",pid, pnode->name);
-                fflush(stdout);
-            } else if (timeX_flag) {
-                print_timeX(pid);
-            }
-            waitpid(pid, NULL, 0);
-        }else {
-            break;
-        }
-
-    }*/
 }
 
 void SIGINT_handler(int signum) {
@@ -65,7 +43,6 @@ void SIGCHLD_handler_wrapper() {
     act.sa_flags |= SA_NOCLDSTOP;
     act.sa_flags |= SA_SIGINFO;
     act.sa_flags |= SA_RESTART;
-    //act.sa_flags |= SA_NODEFER;
     sigaction(SIGCHLD, &act, NULL);
 }
 void SIGUSR1_handler_wrapper() {
@@ -77,25 +54,6 @@ void SIGUSR1_handler_wrapper() {
     act.sa_flags |= SA_NODEFER;
     sigaction(SIGUSR1, &act, NULL);
 }
-/*
-void SIGUSR1_parent_handler_wrapper() {
-    struct sigaction act;
-    sigaction(SIGUSR1, NULL, &act);
-    act.sa_sigaction = SIGUSR1_parent_handler;
-    act.sa_flags |= SA_SIGINFO;
-    act.sa_flags |= SA_RESTART;
-    sigaction(SIGUSR1, &act, NULL);
-}
-
-void SIGUSR1_child_handler_wrapper() {
-    struct sigaction act;
-    sigaction(SIGUSR1, NULL, &act);
-    act.sa_handler = SIGUSR1_child_handler;
-    act.sa_flags |= SA_SIGINFO;
-    act.sa_flags |= SA_RESTART;
-    sigaction(SIGUSR1, &act, NULL);
-}
-*/
 
 void SIGINT_handler_wrapper() {
     struct sigaction act;

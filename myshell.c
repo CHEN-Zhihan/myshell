@@ -1,19 +1,18 @@
 #include <stdio.h>
 #include <string.h>
-#include "util.h"
 #include "parser.h"
 #include "execute.h"
 #include "sig.h"
 #include <sys/wait.h>
 #include <unistd.h>
 #include <errno.h>
+#include <stdlib.h>
 extern sig_atomic_t timeX_flag;
 
 bool get_command(char * buffer) {
     memset(buffer, 0,BUFFER_SIZE * sizeof(char));
     char * input = fgets(buffer,BUFFER_SIZE,stdin);
     if (input == nullptr) {
-
         return false;
     }
     if (split_input(input,nullptr," ",false)>MAX_ARGS_NUMBER) {
@@ -37,7 +36,6 @@ int main(int argc, char const *argv[]) {
             char * input = strndup(buffer,strlen(buffer) - 1);
             Line * line = parse(input);
             if (line) {
-                //sleep(1);
                 timeX_flag=0;
                 execute(line);
             }
@@ -46,11 +44,9 @@ int main(int argc, char const *argv[]) {
         for(int i = 0 ; i < 256; ++i){
             siginfo_t tmp;
             int i = waitid(P_ALL, getpid(), &tmp, WNOWAIT | WNOHANG | WEXITED);
-            //fprintf(stderr, "myshell: %s\n", strerror(errno));
-            //printf("$$$$%d$$$\n", i);
             if (i == -1) {
                 break;
-            }else {
+            } else {
                 int pid = tmp.si_pid;
                 int gid = getpgid(pid);
                 if(gid == -1) {

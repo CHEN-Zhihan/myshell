@@ -1,6 +1,7 @@
 #include "parser.h"
-#define BACKGROUND_MODE 1
-#define FRONTGROUND_MODE 0
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 int hasCmd(const char * line, const int begin, const int end) {
     int i=begin;
     bool hascmd=false;
@@ -17,25 +18,6 @@ int hasCmd(const char * line, const int begin, const int end) {
     }
 }
 
-void freeCommand(Command * cmd) {
-    int i=0;
-    for (;i!=cmd->argc;++i) {
-        free(cmd->argv[i]);
-    }
-    free(cmd);
-}
-
-void freeLine(Line * line) {
-    Command * iterator = line->head;
-    Command * temp=nullptr;
-    while (iterator) {
-        temp = iterator;
-        iterator=iterator->next;
-        freeCommand(temp);
-    }
-    free(line);
-}
-
 int syntaxCheck(char * line) {
     ssize_t size = strlen(line);
     if(split_input(line, nullptr," ",false)==0) {
@@ -46,7 +28,7 @@ int syntaxCheck(char * line) {
     // & check
     if (background) {
         if (background==line) {
-            printf("myshell: syntax error near unexpected token '&'\n");
+            fprintf(stderr,"myshell: syntax error near unexpected token '&'\n");
             return -1;
         }
         int before=(int)(background-line)-1;
@@ -59,13 +41,13 @@ int syntaxCheck(char * line) {
             --before;
         }
         if (emptyBefore) {
-            printf("myshell: syntax error near unexpected token '&'\n");
+            fprintf(stderr,"myshell: syntax error near unexpected token '&'\n");
             return -1;
         }
         int after = (int)(background-line)+1;
         while (after<size) {
             if (line[after]!=' ') {
-                printf("myshell: '&' should not appear in the middle of the command line\n");
+                fprintf(stderr,"myshell: '&' should not appear in the middle of the command line\n");
                 return -1;
             }
             ++after;
@@ -77,13 +59,13 @@ int syntaxCheck(char * line) {
     if (pipe!=nullptr) {
         int itr = hasCmd(line,0,(int)(pipe-line));
         if (itr==-1||line[size-1]=='|') {
-            printf("myshell: Incomplete '|' sequence\n");
+            fprintf(stderr,"myshell: Incomplete '|' sequence\n");
             return -1;
         }
         while (itr!=size)  {
             itr = hasCmd(line,itr+1,(int)size);
             if (itr==-1) {
-                printf("myshell: Incomplete '|' sequence\n");
+                fprintf(stderr,"myshell: Incomplete '|' sequence\n");
                 return -1;
             }
         }
@@ -97,7 +79,7 @@ int syntaxCheck(char * line) {
 
 Line * process(Line * line, char * message) {
     if (line->head->argc!=1||line->head->next!=nullptr||line->background) {
-        printf("myshell: \"%s\" with other arguments!!!\n",message);
+        fprintf(stderr,"myshell: \"%s\" with other arguments!!!\n",message);
         freeLine(line);
         return nullptr;
     } else {
@@ -118,12 +100,12 @@ Line * processBuiltin(Line * line) {
     Command * iterator=line->head;
     if (strcmp(iterator->argv[0],"timeX\0")==0) {
         if (line->background) {
-            printf("myshell: \"timeX\" cannot be run in background mode\n");
+            fprintf(stderr,"myshell: \"timeX\" cannot be run in background mode\n");
             freeLine(line);
             return nullptr;
         }
         if (iterator->argc==1) {
-            printf("myshell: \"timeX\" cannot be a standalone command\n");
+            fprintf(stderr,"myshell: \"timeX\" cannot be a standalone command\n");
             freeLine(line);
             return nullptr;
         }
@@ -185,5 +167,3 @@ Line * parse(char * line) {
     result = processBuiltin(result);
     return result;
 }
-
-

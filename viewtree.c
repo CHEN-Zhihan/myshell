@@ -1,5 +1,8 @@
 #include "util.h"
 #include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 char * getLastOne(char * buffer) {
     ssize_t i=BUFFER_SIZE-1;
@@ -33,23 +36,11 @@ char* combine(char * buffer,char *lastOne) {
     j=0;
     while (j!=i) {
         result[lastSize+j]=buffer[j];
-        buffer[j]='\n'; //combined;
+        buffer[j]='\n'; 
         ++j;
     }
     result[lastSize+j]='\0';
     free(lastOne);
-    return result;
-}
-
-
-char * copy(char * buffer,ssize_t i, ssize_t j) {
-    char * result=(char*)malloc(sizeof(char)*(j-i+1));
-    ssize_t c=0;
-    while (c!=j-i) {
-        result[c]=buffer[i+c];
-        ++c;
-    }
-    result[c]='\0';
     return result;
 }
 
@@ -132,7 +123,6 @@ PIDNode * getChildren(pid_t pid) {
     }
 }
 
-
 PIDNode * buildTree(PIDNode* root) {
     root->child=getChildren(root->PID);
     PIDNode * iterator=root->child;
@@ -166,7 +156,6 @@ void printTree(PIDNode * root) {
     }
 }
 
-// /home/zhchen/HKU/COMP3230/assignments/myshell/test/loopf 3600&
 PIDNode * freeTree(PIDNode * root) {
     if (root!=nullptr) {
         freeTree(root->next);
@@ -174,6 +163,7 @@ PIDNode * freeTree(PIDNode * root) {
         free(root->name);
         free(root);
     }
+    return nullptr;
 }
 
 void viewTree() {

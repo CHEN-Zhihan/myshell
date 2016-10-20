@@ -1,10 +1,5 @@
 #ifndef UTIL_H
 #define UTIL_H
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <sys/types.h>
 #ifndef nullptr
 #define nullptr NULL
 #endif
@@ -33,6 +28,8 @@
 #define MAX_PROC_FILE_PATH 256
 #define MAX_PIPE_NUMBER 5
 
+#include <sys/types.h>
+
 typedef struct Command {
     int argc;
     char * argv[MAX_ARGS_NUMBER];
@@ -53,10 +50,10 @@ typedef struct PIDNode {
     struct PIDNode *child;
 } PIDNode;
 
-
-
 bool allSpace(char *input);
-
 int split_input(char *input, char **output, char *delimiter, bool flag);
 PIDNode * buildPIDNode(pid_t inp);
+char * copy(char * buffer,ssize_t i, ssize_t j);
+void freeCommand(Command * cmd);
+void freeLine(Line * line);
 #endif
