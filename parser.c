@@ -152,7 +152,9 @@ Line * processBuiltin(Line * line) {
 
 
 /*
-    
+    It parses a command from input, splits it input argv and 
+    set the argc using space as its delimiter. 
+    It removes & if encounters and return the parsed command;
 */
 Command * parseCommand(char * input) {
     Command * result = (Command *)malloc(sizeof(Command));
@@ -174,7 +176,13 @@ Command * parseCommand(char * input) {
 
 
 /*
-
+    It parses a line into a parsed Line structure.
+    Firstly it does syntax check to check the usage of
+    pipe and background and set the flag correspondingly.
+     secondly it splits the line into
+    5 or fewer raw commands and uses these raw commands to create
+    a Command linked list. Finally it processes the built-in function
+    and returns the result.
 */
 Line * parse(char * line) {
     int i=0;

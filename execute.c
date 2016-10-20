@@ -11,9 +11,11 @@
 extern sig_atomic_t sigusr1_flag;
 extern sig_atomic_t timeX_flag;
 
+
+
 void run_command(Command *cmd, int is_background) {
     if (is_background) {
-        setpgid(0, 0);
+        setpgid(0, 0); //put the child process into another group of processes.
     }
     while(sigusr1_flag == 0);
     execvp(cmd->argv[0], cmd->argv);
@@ -21,6 +23,10 @@ void run_command(Command *cmd, int is_background) {
     exit(EXIT_FAILURE);
 }
 
+/*
+    If it is a background process, wait_wrapped doesn't wait and returns.
+    Else it allows the parent process to ignore SIGINT. 
+*/
 void wait_wrapped(int pid, int is_background, int flag) {
     if (!is_background) {
         struct sigaction act;
@@ -31,6 +37,13 @@ void wait_wrapped(int pid, int is_background, int flag) {
     }
 }
 
+/*
+    This is a wrapped version of fork().
+    It sets sigusr1_flag to 0 (refer to sig.c)
+    and execute fork(). If fork fails it 
+    prints error and returns -1. If succeeds, the parent
+    process sends a SIGUSR1 to pid and then returns the pid. 
+*/
 int safe_fork() {
     sigusr1_flag = 0;
     int pid = fork();
@@ -44,7 +57,15 @@ int safe_fork() {
     return pid;
 }
 
-void execute(struct Line *line) {
+/*
+    It executes the Line accordingly. If the Line->type is exit, 
+    it prints the message, releases memory and exits. If the Line->type
+    is viewtree, it releases memory and calls viewTree. If the Line->type
+    is TIMEX_TYPE, it sets the timeX_flag to 1. If there's no piping, 
+    It forks a new child and executes the command while the parent process will wait for it.
+    If there's piping, iterates through all the commands.
+*/
+void execute(Line *line) {
     if (line->type ==EXIT_TYPE) {
         fprintf(stderr, "myshell: Terminated\n");
         freeLine(line);
@@ -71,11 +92,11 @@ void execute(struct Line *line) {
             pipe(pipefd[pipe_number]);
             pid_t pid = safe_fork();
             pid_list[pipe_number] = pid;
-            if (pid == 0) {
+            if (pid == 0) {                          //piping first command.
                 pipe_out(pipefd[pipe_number]);
                 run_command(iterator, line->background);
             } 
-            while(iterator->next->next != NULL) {
+            while(iterator->next->next != NULL) {  //piping intermediate commands
                 iterator = iterator -> next;
                 ++pipe_number;
                 pipe(pipefd[pipe_number]);
@@ -92,7 +113,7 @@ void execute(struct Line *line) {
             iterator = iterator->next;
             pid = safe_fork();
 
-            if (pid == 0) {
+            if (pid == 0) { // piping last command.
                 pipe_in(pipefd[pipe_number]);
                 run_command(iterator, line->background);
             }else if (pid > 0) {
@@ -108,7 +129,11 @@ void execute(struct Line *line) {
     }
 }
 
-void print_timeX(int pid) {
+/*
+    print_timeX reads /proc/pid/stat to get the corresponding
+    statistics and prints the required information.
+*/
+void print_timeX(pid_t pid) {
     int pid_get;
     char cmd[MAX_PROC_FILE_PATH];
     unsigned long ut, st;
