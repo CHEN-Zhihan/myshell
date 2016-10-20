@@ -43,12 +43,9 @@ int main(int argc, char const *argv[]) {
             }
             free(input);
         }
-
-
-        while(1) {
+        for(int i = 0 ; i < 256; ++i){
             siginfo_t tmp;
-
-            int i = waitid(P_ALL, 1, &tmp, WNOWAIT | WNOHANG | WEXITED);
+            int i = waitid(P_ALL, getpid(), &tmp, WNOWAIT | WNOHANG | WEXITED);
             //fprintf(stderr, "myshell: %s\n", strerror(errno));
             //printf("$$$$%d$$$\n", i);
             if (i == -1) {
@@ -69,7 +66,5 @@ int main(int argc, char const *argv[]) {
                 waitpid(pid, NULL, WNOHANG);
             }
         }
-
-
     }
 }

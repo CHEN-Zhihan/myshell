@@ -40,7 +40,6 @@ PIDNode * buildPIDNode(pid_t inp) {
     sprintf(str, "/proc/%d/stat",inp);
     FILE *file = fopen(str, "r");
     if (file == NULL) {
-        printf("Error in open my proc file: %d\n",inp);
         return nullptr;
     }
     int z;

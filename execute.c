@@ -151,8 +151,7 @@ void print_timeX(int pid) {
 
     FILE *uptime = fopen("/proc/uptime", "r");
     if (uptime == NULL) {
-        printf("Error in open uptime file\n");
-        exit(0);
+	return;
     }
     fscanf(uptime, "%lf", &time_from_boot);
     fclose(uptime);
