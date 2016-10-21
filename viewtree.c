@@ -178,7 +178,7 @@ void printTree(PIDNode * root) {
     printf("%s",root->name);
     PIDNode * iterator=root->child;
     if (iterator!=nullptr) {
-        printf("-");
+        printf(" - ");
     } else {
         printf("\n");
     }
@@ -191,7 +191,7 @@ void printTree(PIDNode * root) {
         for(j=0;j!=strlen(root->name);++j) {
             printf(" ");
         }
-        printf("-");
+        printf(" - ");
         printTree(iterator);
         iterator=iterator->next;
     }
