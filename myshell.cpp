@@ -8,11 +8,15 @@
 #include "parser.h"
 #include "execute.h"
 
-
+void SIGINTHandler(int) {
+    fprintf(stdout, "\n");
+}
 
 int main(int argc, const char * argv[]) {
     struct sigaction act;
     sigaction(SIGINT, nullptr, &act);
+    act.sa_handler = SIGINTHandler;
+    sigaction(SIGINT, &act, nullptr);
     char cwd[BUFFER_SIZE];
     struct passwd * pwd = getpwuid(getuid());
     char * user = pwd->pw_name;

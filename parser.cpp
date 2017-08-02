@@ -49,11 +49,7 @@ inline void freeLine(const Line * l) {
 }
 
 inline bool isArg(char c) {
-    return ('a' <= c and c <= 'z') or
-            ('A' <= c and c <= 'Z') or
-            ('0' <= c and c <= '9') or
-            (c == '-') or (c == '_') or 
-            (c == '.');
+    return (c != '&') and (c != '|') and (c != '\n') and (c != ' ');
 }
 
 inline bool parsePipe() {
