@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <signal.h>
 
 char buffer[BUFFER_SIZE];
 
@@ -133,7 +134,9 @@ const Line * parseLine() {
 const Line * parse() {
     char * input = fgets(buffer, BUFFER_SIZE, stdin);
     if (input == nullptr) {
-        perror(nullptr);
+        if (errno != EINTR) {
+            perror(nullptr);
+        }
         return nullptr;
     }    
     return parseLine();

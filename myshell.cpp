@@ -16,6 +16,7 @@ int main(int argc, const char * argv[]) {
     struct sigaction act;
     sigaction(SIGINT, nullptr, &act);
     act.sa_handler = SIGINTHandler;
+    act.sa_flags &= ~SA_RESTART;
     sigaction(SIGINT, &act, nullptr);
     char cwd[BUFFER_SIZE];
     struct passwd * pwd = getpwuid(getuid());
@@ -24,7 +25,6 @@ int main(int argc, const char * argv[]) {
         if (getcwd(cwd, BUFFER_SIZE) != nullptr) {
             fprintf(stdout, "%s@%s: ", user, cwd);
         } else {
-            fprintf(stderr, "error getcwd()");
             perror(nullptr);
             exit(EXIT_FAILURE);
         }
