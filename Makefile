@@ -1,25 +1,17 @@
 
 
-myshell: myshell.c util execute parser sig viewtree
-	gcc myshell.c util.o execute.o parser.o sig.o viewtree.o -o myshell -std=gnu99
+myshell: myshell.cpp parser execute
+	g++ myshell.cpp parser.o execute.o -o myshell -std=c++11 -g
 
-execute: execute.c
-	gcc -c execute.c -std=gnu99
+parser: parser.cpp
+	g++ -c parser.cpp -std=c++11 -g
 
-parser: parser.c
-	gcc -c parser.c -std=gnu99
+execute: execute.cpp
+	g++ -c execute.cpp -std=c++11 -g
 
-util: util.c
-	gcc -c util.c -std=gnu99
-
-sig: sig.c
-	gcc -c sig.c -std=gnu99
-
-viewtree: viewtree.c
-	gcc -c viewtree.c -std=gnu99
 
 clear:
-	rm *.o
+	rm *.o myshell
 
 .PHONY:
 	clear
