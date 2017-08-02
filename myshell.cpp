@@ -13,7 +13,6 @@
 int main(int argc, const char * argv[]) {
     struct sigaction act;
     sigaction(SIGINT, nullptr, &act);
-    sigaction
     char cwd[BUFFER_SIZE];
     struct passwd * pwd = getpwuid(getuid());
     char * user = pwd->pw_name;
