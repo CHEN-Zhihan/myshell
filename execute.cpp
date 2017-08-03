@@ -58,10 +58,8 @@ void execute(const Line * l) {
                 PIPE_OUT(pipes[noPipe]);
                 EXEC(l->cmds[noPipe]->argv);
             }
-            CLOSE_PIPE(pipes[noPipe]);
             pids[noPipe++] = pid;
             for (;noPipe != l->noCmd - 1; ++noPipe) {
-                fprintf(stderr, "gg\n");
                 pipe(pipes[noPipe]);
                 pid = fork();
                 if (pid < 0) {
@@ -72,7 +70,7 @@ void execute(const Line * l) {
                     PIPE_OUT(pipes[noPipe]);
                     EXEC(l->cmds[noPipe]->argv);
                 }
-                CLOSE_PIPE(pipes[noPipe]);
+                CLOSE_PIPE(pipes[noPipe - 1]);
                 pids[noPipe] = pid;
             }
             pipe(pipes[noPipe]);
@@ -84,6 +82,7 @@ void execute(const Line * l) {
                 PIPE_IN(pipes[noPipe - 1]);
                 EXEC(l->cmds[noPipe]->argv);
             }
+            CLOSE_PIPE(pipes[noPipe - 1]);
             CLOSE_PIPE(pipes[noPipe]);
             pids[noPipe] = pid;
             for (int i = 0; i != l->noCmd; ++i) {
