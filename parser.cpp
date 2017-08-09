@@ -5,7 +5,8 @@
 #include <string.h>
 #include <signal.h>
 
-char buffer[BUFFER_SIZE];
+
+char * buffer;
 
 int next;
 int length;
@@ -39,6 +40,7 @@ inline void freeCmd(const Command * c) {
     for (int i = 0; i != c->argc; ++i) {
         free((char*)c->argv[i]);
     }
+    free(c->argv);
     free((Command*)c);
 }
 
@@ -131,13 +133,13 @@ const Line * parseLine() {
 }
 
 
-const Line * parse() {
-    char * input = fgets(buffer, BUFFER_SIZE, stdin);
+const Line * parse(char * input) {
+    buffer = input;
     if (input == nullptr) {
         if (errno != EINTR) {
             perror(nullptr);
         }
         return nullptr;
-    }    
+    }
     return parseLine();
 }

@@ -20,6 +20,6 @@ struct Line {
     const Command * cmds[MAX_NO_CMD_PER_LINE];
 };
 
-const Line * parse();
+const Line * parse(char *);
 void freeLine(const Line * );
 #endif

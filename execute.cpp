@@ -6,12 +6,14 @@
 #include <errno.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <ncurses.h>
 
 #define PIPE_IN(pipe) close(pipe[1]);dup2(pipe[0], STDIN_FILENO);
 #define PIPE_OUT(pipe) close(pipe[0]);dup2(pipe[1], STDOUT_FILENO);
 #define CLOSE_PIPE(pipe) close(pipe[1]);close(pipe[0]);
 #define EXEC(argv)  execvp(argv[0], (char * const *)argv); \
-                    fprintf(stderr, "myshell: '%s': %s\n", argv[0], strerror(errno));
+                    fprintf(stderr, "myshell: '%s': %s\n", argv[0], strerror(errno)); \
+                    exit(EXIT_FAILURE);
 
 bool preprocess(const Line * l) {
     const Command * firstCmd = l->cmds[0];
