@@ -11,10 +11,11 @@
 #include "execute.h"
 #include "parser.h"
 
+#define COLOR_GREEN "\x1B[32m"
+
 void SIGINTHandler(int) {
     fprintf(stdout, "\n");
 }
-
 
 int main(int argc, const char * argv[]) {
     using_history();

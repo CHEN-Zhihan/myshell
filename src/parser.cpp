@@ -1,9 +1,9 @@
-#include "parser.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
+#include "parser.h"
 
 
 char * buffer;
@@ -106,7 +106,6 @@ bool parseOpCmd(Line * l) {
     return parseOpCmd(l);
 }
 
-
 const Line * parseLine() {
     next = 0;
     length = strlen(buffer);
@@ -117,6 +116,7 @@ const Line * parseLine() {
     Line * l = initLine(c);
     if (parseOpCmd(l) == false) {
         freeLine(l);
+        fprintf(stderr, "myshell: syntax error\n");        
         return nullptr;
     }
     l->background = parseBackground();
@@ -131,7 +131,6 @@ const Line * parseLine() {
     }
     return l;
 }
-
 
 const Line * parse(char * input) {
     buffer = input;
