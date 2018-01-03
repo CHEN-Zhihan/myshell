@@ -25,6 +25,10 @@ inline const Command * initCommand(int argc, const char * argv[]) {
 inline Line * initLine(const Command * c) {
     Line * l = (Line *)malloc(sizeof(Line));
     l->cmds[0] = c;
+    l->redirectFile[0] = nullptr;
+    l->redirectFile[1] = nullptr;
+    l->redirect[0] = NO_REDIRECT;
+    l->redirect[1] = NO_REDIRECT;
     l->noCmd = 1;
     return l;
 }
@@ -48,24 +52,37 @@ inline void freeLine(const Line * l) {
     for (int i = 0; i != l->noCmd; ++i) {
         freeCmd(l->cmds[i]);
     }
+    for (int i = 0; i != 2; ++i) {
+        if (l->redirectFile[i] != nullptr) {
+            free((char*)l->redirectFile[i]);
+        }
+    }
     free((Line *)l);
 }
 
-inline bool isArg(char c) {
-    return (c != '&') and (c != '|') and (c != '\n') and (c != ' ');
+inline bool isArg() {
+    char c = buffer[next];
+    if (c == '1' || c == '2') {
+        return next + 1 == length || buffer[next + 1] != '>';
+    }
+    return (c != '&') && (c != '|') && (c != '\n') && (c != ' ') && (c != '>');
 }
 
 inline bool parsePipe() {
-    return next != length and buffer[next++] == '|';
+    return next != length && buffer[next] == '|' && (++next);
+}
+
+inline bool parseRedirect() {
+    return next != length && buffer[next] == '>' && (++next);
 }
 
 inline bool parseBackground() {
-    return next != length and buffer[next++] == '&';
+    return next != length && buffer[next] == '&' && (++next);
 }
 
 const char * parseArg() {
     int begin = next;
-    while (next != length && isArg(buffer[next])) {
+    while (next != length && isArg()) {
         ++next;
     }
     if (next == begin) {
@@ -92,10 +109,58 @@ const Command * parseCmd() {
     return initCommand(argc, argv);
 }
 
+inline int parseOpNumber() {
+    if (next != length) {
+
+        if (buffer[next] == '1') {
+            ++next;
+            return 0;
+        }
+        if (buffer[next] == '2') {
+            ++next;
+            return 1;
+        }
+    }
+    return 0;
+}
+
+inline Line* parseOneRedirect(Line* l, int redirectNumber) {
+    if (parseRedirect()) {
+        l->redirect[redirectNumber] = parseRedirect() ? REDIRECT_APPEND : REDIRECT;
+        escapeSpace();
+        l->redirectFile[redirectNumber] = parseArg();
+        if (l->redirectFile[redirectNumber] == nullptr) {
+            freeLine(l);
+            return nullptr;
+        }
+    }
+    return l;
+}
+
+Line * parseRedirectToFile(Line* l) {
+    int firstRedirect = parseOpNumber();
+    l = parseOneRedirect(l, firstRedirect);
+    if (l == nullptr) {
+        return nullptr;
+    }
+    escapeSpace();
+    int secondRedirect = parseOpNumber();
+    if (secondRedirect == firstRedirect && parseRedirect()) {
+        fprintf(stderr, "myshell: incorrect redirection *%c* %d\t%d\n", buffer[next], firstRedirect, secondRedirect);
+        freeLine(l);
+        return nullptr;
+    }
+    l = parseOneRedirect(l, secondRedirect);
+    if (l == nullptr) {
+        return nullptr;
+    }
+
+    return l;
+}
+
 bool parseOpCmd(Line * l) {
     escapeSpace();
     if (!parsePipe()) {
-        --next;
         return true;
     }
     const Command * c = parseCmd();
@@ -114,17 +179,26 @@ const Line * parseLine() {
         return nullptr;
     }
     Line * l = initLine(c);
-    if (parseOpCmd(l) == false) {
+    if (!parseOpCmd(l)) {
         freeLine(l);
-        fprintf(stderr, "myshell: syntax error\n");        
+        #ifdef DEBUG
+        #endif
+        fprintf(stderr, "myshell: syntax error\n");
         return nullptr;
     }
-    l->background = parseBackground();
-    if (not l->background) {
-        --next;
+    escapeSpace();
+    l = parseRedirectToFile(l);
+    if (l == nullptr) {
+        return nullptr;
     }
     escapeSpace();
-    if (next != length - 1) {
+    l->background = parseBackground();
+    escapeSpace();
+    if (next != length) {
+        #ifdef DEBUG
+        fprintf(stderr, "[DEBUG] has more input, %d parsed, %d expected\n", next, length);
+        exit(EXIT_FAILURE);
+        #endif
         fprintf(stderr, "myshell: syntax error\n");
         freeLine(l);
         return nullptr;

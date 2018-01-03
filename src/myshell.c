@@ -11,9 +11,8 @@
 #include "execute.h"
 #include "parser.h"
 
-#define COLOR_GREEN "\x1B[32m"
 
-void SIGINTHandler(int) {
+void SIGINTHandler(int dummy) {
     fprintf(stdout, "\n");
 }
 
