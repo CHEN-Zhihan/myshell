@@ -1,6 +1,2 @@
-.idea/
 .vscode/
-CMakeLists.txt
-test.c
-*.o
-myshell
+

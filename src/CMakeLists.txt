@@ -1,0 +1,8 @@
+include_directories(${myshell_SOURCE_DIR}/include)
+file(GLOB SOURCES "*.c")
+add_executable(myshell ${SOURCES})
+find_package(readline REQUIRED)
+include_directories(${readline_INCLUDE_DIRS})
+set(LIBS ${LIBS} ${readline_LIBRARIES})
+target_compile_options(myshell PRIVATE -std=gnu99 -Wall -Wall -O2 -g)
+target_link_libraries(myshell ${LIBS})
