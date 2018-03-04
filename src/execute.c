@@ -1,29 +1,43 @@
-#include <string.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
 #include <errno.h>
-#include <sys/wait.h>
-#include <signal.h>
 #include <fcntl.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include "execute.h"
 
-#define PIPE_IN(pipe) close(pipe[1]);dup2(pipe[0], STDIN_FILENO);
-#define PIPE_OUT(pipe) close(pipe[0]);dup2(pipe[1], STDOUT_FILENO);
-#define CLOSE_PIPE(pipe) close(pipe[1]);close(pipe[0]);
-#define EXEC(argv)  execvp(argv[0], (char * const *)argv); \
-                    fprintf(stderr, "myshell: '%s': %s\n", argv[0], strerror(errno)); \
-                    exit(EXIT_FAILURE);
-#define SAFE_PIPE(argv) if (pipe(argv)) {fprintf(stderr, "myshell: 'pipe': %s\n", strerror(errno));exit(EXIT_FAILURE);}
+#define PIPE_IN(pipe) \
+    close(pipe[1]);   \
+    dup2(pipe[0], STDIN_FILENO);
+#define PIPE_OUT(pipe) \
+    close(pipe[0]);    \
+    dup2(pipe[1], STDOUT_FILENO);
+#define CLOSE_PIPE(pipe) \
+    close(pipe[1]);      \
+    close(pipe[0]);
+#define EXEC(argv)                                                    \
+    execvp(argv[0], (char* const*)argv);                              \
+    fprintf(stderr, "myshell: '%s': %s\n", argv[0], strerror(errno)); \
+    exit(EXIT_FAILURE);
+#define SAFE_PIPE(argv)                                            \
+    if (pipe(argv)) {                                              \
+        fprintf(stderr, "myshell: 'pipe': %s\n", strerror(errno)); \
+        exit(EXIT_FAILURE);                                        \
+    }
 
-bool preprocess(const Line * l) {
-    const Command * firstCmd = l->cmds[0];
-    if (strcmp(firstCmd->argv[0], "exit\0") == 0) {
+bool preprocess(const Line* l) {
+    const Command* firstCmd = l->cmds[0];
+    if (strcmp(firstCmd->argv[0], "exit") == 0) {
         fprintf(stdout, "bye\n");
         exit(EXIT_SUCCESS);
-    } else if (strcmp(firstCmd->argv[0], "cd\0") == 0) {
-        if (firstCmd->argc != 2) {
+    } else if (strcmp(firstCmd->argv[0], "cd") == 0) {
+        if (firstCmd->argc == 1) {
+            firstCmd->argv[1] = getenv("HOME");
+        }
+        if (firstCmd->argc > 2) {
             fprintf(stderr, "myshell: invalid cd operation\n");
             return true;
         }
@@ -35,7 +49,6 @@ bool preprocess(const Line * l) {
     return false;
 }
 
-
 void processRedirect(const Line* l) {
     for (int i = 0; i != 2; ++i) {
         if (l->redirect[i] != NO_REDIRECT) {
@@ -43,7 +56,8 @@ void processRedirect(const Line* l) {
             flag |= l->redirect[i] == REDIRECT_APPEND ? O_APPEND : O_TRUNC;
             int fd = open(l->redirectFile[i], flag, 0664);
             if (fd < 0) {
-                fprintf(stderr, "myshell: '%s': %s\n", l->redirectFile[i], strerror(errno));
+                fprintf(stderr, "myshell: '%s': %s\n", l->redirectFile[i],
+                        strerror(errno));
                 return;
             }
             dup2(fd, i == 0 ? STDOUT_FILENO : STDERR_FILENO);
@@ -52,7 +66,7 @@ void processRedirect(const Line* l) {
     }
 }
 
-void execute(const Line * l) {
+void execute(const Line* l) {
     if (!preprocess(l)) {
         if (l->noCmd == 1) {
             pid_t pid = fork();
@@ -79,7 +93,7 @@ void execute(const Line * l) {
                 EXEC(l->cmds[noPipe]->argv);
             }
             pids[noPipe++] = pid;
-            for (;noPipe != l->noCmd - 1; ++noPipe) {
+            for (; noPipe != l->noCmd - 1; ++noPipe) {
                 SAFE_PIPE(pipes[noPipe]);
                 pid = fork();
                 if (pid < 0) {
